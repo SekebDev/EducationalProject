@@ -2,17 +2,17 @@
 
 ## Estado atual
 
-Este repositório ainda não tem aplicação, manifests, containers ou scripts de testes. Os comandos abaixo são o contrato que a implementação deverá disponibilizar; não funcionam neste checkout de documentação e não foram executados como testes. Neste planejamento, a validação é inspeção de consistência, links e requisitos. A próxima fase gera `tasks.md` a partir destes artefatos.
+A aplicação Next.js/NestJS, worker, migrações e testes estão implementados. Os resultados locais mais recentes estão em [validation.md](validation.md); os procedimentos de implantação, backup e retenção estão em [docs/operations.md](../../docs/operations.md). O projeto ainda não tem ensaio de carga, avaliação humana ou recuperação integral do S3 aprovados. Este guia mantém os cenários de aceite para a próxima execução em staging.
 
 ## Pré-requisitos após o bootstrap
 
 - Node.js 24 LTS >=24.15 e pnpm 10, com versões exatas registradas no projeto; Docker Desktop com containers Linux no Windows.
 - PostgreSQL 18 com pgvector pelo Compose do projeto, banco de teste separado e caixa SMTP local. Migrações e seed somente sintético, isolado da produção.
-- `.env.example` documentado: DATABASE_URL, TEST_DATABASE_URL, APP_ORIGIN, SESSION_SECRET, STORAGE_DRIVER/local path ou S3_BUCKET/REGION, SMTP_HOST/PORT/FROM, AI_PROVIDER=fake|openai, OPENAI_API_KEY, OPENAI_CHAT_MODEL, OPENAI_EXAM_MODEL, OPENAI_GRADING_MODEL, OPENAI_INSIGHTS_MODEL, OPENAI_EMBEDDING_MODEL, limites de concorrência/tokens e AI_EVAL_BUDGET_USD.
+- `.env.example` documenta DATABASE_URL, TEST_DATABASE_URL, APP_ORIGIN, SESSION_SECRET, STORAGE_DRIVER/local path ou S3_BUCKET/REGION, SMTP_HOST/PORT/FROM, AI_PROVIDER=fake|openai, OPENAI_API_KEY, modelos e limites de entrada/saída. Orçamento dos ensaios é configurado nos comandos próprios.
 - Secrets somente em `.env` ignorado/secret manager. Variáveis OpenAI/S3/sessão nunca usam prefixo NEXT_PUBLIC. Falta de configuração obrigatória deve interromper inicialização com diagnóstico sem valor secreto.
 - Modo fake é explicitamente identificado na interface local; produção recusa iniciar com fake. Modelo inicial real `gpt-6-sol` e embeddings `text-embedding-3-small`; validar disponibilidade da conta.
 
-## Comandos previstos (PowerShell, raiz do repositório)
+## Comandos (PowerShell, raiz do repositório)
 
 ```powershell
 Copy-Item -LiteralPath '.env.example' -Destination '.env'
@@ -23,7 +23,7 @@ pnpm db:seed:test
 pnpm dev
 ```
 
-Não sobrescrever `.env` existente. `pnpm dev` deverá iniciar web na porta 3000, API interna 3001 e worker; proxy `/api` mantém cookie/CSRF na mesma origem. PostgreSQL e SMTP locais escutam somente loopback. `pnpm db:seed:test` deve recusar produção. Contas A/B e materiais de fixture são documentados no seed, nunca credenciais reais.
+Não sobrescrever `.env` existente. `pnpm dev` inicia web na porta 3000, API interna 3001 e worker; proxy `/api` mantém cookie/CSRF na mesma origem. PostgreSQL e SMTP locais escutam somente loopback. `pnpm db:seed:test` recusa produção. Use apenas contas e materiais sintéticos no banco de teste.
 
 ```powershell
 pnpm format:check
@@ -36,14 +36,14 @@ pnpm test:e2e
 pnpm build
 ```
 
-Todos são gates locais e de CI. Integração/contratos usam banco e recursos isolados por execução, com cleanup. `test:e2e` inicializa a aplicação com IA falsa, três formatos de arquivo e duas contas; Playwright instala browsers por setup documentado. Não usar download de fonte em build: fonte/licença versionadas ou instaladas por pacote fixado.
+Esses comandos foram executados localmente em 29/09/2026; veja contagens e ressalvas em `validation.md`. O CI configura PostgreSQL, Mailpit, migrações e Edge para repetir unitários, integração, contratos e E2E com IA fake. Integração/contratos usam `TEST_DATABASE_URL` e limpam seus dados. `test:e2e` inicializa API, worker e web em 3101/3100.
 
 ```powershell
 pnpm test:evaluations
 pnpm test:load
 ```
 
-Os últimos comandos exigem ambiente de staging dedicado, `AI_PROVIDER=openai`, chave e orçamento explícito. Recusar execução se orçamento ausente; registrar consumo e encerrar ao atingir teto. Dados são sintéticos/revisados, sem arquivos pessoais. `test:load` deve suportar fake para medir infraestrutura e real para SC-009; execução fake não comprova latência do provedor.
+`test:evaluations` valida o corpus e prepara um relatório sem chamar modelos. `test:load` requer k6 instalado e aceita modo fake para infraestrutura; modo real exige staging, chave e orçamento explícitos. Nenhum resultado real de qualidade ou p95 foi obtido neste ambiente. Dados de ensaio devem ser sintéticos/revisados, sem arquivos pessoais.
 
 ## Cenários reproduzíveis
 

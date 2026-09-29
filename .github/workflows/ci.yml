@@ -1,0 +1,61 @@
+name: Quality gates
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  quality:
+    runs-on: ubuntu-latest
+    env:
+      NODE_ENV: test
+      DATABASE_URL: postgres://study:study@127.0.0.1:5432/study_test
+      TEST_DATABASE_URL: postgres://study:study@127.0.0.1:5432/study_test
+      APP_ORIGIN: http://localhost:3000
+      SESSION_SECRET: ci-session-secret-replace-in-deployment-123456
+      AI_PROVIDER: fake
+      STORAGE_DRIVER: local
+      STORAGE_LOCAL_PATH: .local-storage-ci
+      SMTP_HOST: 127.0.0.1
+      SMTP_PORT: 1025
+      SMTP_FROM: estudos@example.invalid
+    services:
+      postgres:
+        image: pgvector/pgvector:pg18
+        env:
+          POSTGRES_USER: study
+          POSTGRES_PASSWORD: study
+          POSTGRES_DB: study_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U study -d study_test"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+      mailpit:
+        image: axllent/mailpit:v1.27
+        ports:
+          - 1025:1025
+          - 8025:8025
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10.34.5
+          run_install: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .node-version
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm db:migrate
+      - run: pnpm format:check
+      - run: pnpm lint
+      - run: pnpm typecheck
+      - run: pnpm test:unit
+      - run: pnpm test:integration
+      - run: pnpm test:contract
+      - run: pnpm exec playwright install --with-deps msedge
+      - run: pnpm test:e2e
+      - run: pnpm build

@@ -25,7 +25,7 @@ Saída: `{support:"sufficient"|"insufficient",reason:null|string,questions:[]}`.
 - Objetiva: quatro `{id,text}` distintos, `correctOptionId` pertencente às quatro e `{optionId,explanation}` para todas.
 - Discursiva: `rubric:[{id,label,maxUnits,description}]` com teto total 10.000 e `referenceAnswer`.
 
-Validação determinística: quantidades exatas, não vazio, alternativas distintas, tipos/cotas, nível, tópicos, soma de pesos, IDs de fonte e duplicata por texto normalizado. Checagem de conteúdo detecta ambiguidade/duplicidade semântica e falta de suporte; validar em corpus humano. Não prometer que só schema detecta esses defeitos.
+Entrada de geração inclui o snapshot limitado de mensagens concluídas da conversa de origem. O histórico é dado não confiável; não altera instruções, gabarito nem critérios. Validação determinística: quantidades exatas, não vazio, alternativas distintas, tipos/cotas, nível, tópicos, soma de pesos, IDs de fonte e duplicata por texto normalizado. Checagem de conteúdo detecta ambiguidade/duplicidade semântica e falta de suporte; validar em corpus humano. Não prometer que só schema detecta esses defeitos.
 
 Se insuficiente, não criar tentativa nem questões visíveis. Ready exige todos os gabaritos/rubricas e a tentativa única no mesmo commit. Estágio privado de geração pode ser descartado após falha. Sem fallback externo em prova fundamentada.
 

@@ -1,0 +1,14 @@
+.agents/
+.nodeterm/
+.specify/
+specs/
+node_modules/
+pnpm-lock.yaml
+.next/
+.next-e2e/
+dist/
+coverage/
+test-results/
+playwright-report/
+apps/web/next-env.d.ts
+tests/evaluations/*.jsonl

@@ -1,0 +1,22 @@
+services:
+  db:
+    image: pgvector/pgvector:pg18
+    environment:
+      POSTGRES_DB: study
+      POSTGRES_USER: study
+      POSTGRES_PASSWORD: study
+    ports:
+      - '127.0.0.1:5432:5432'
+    volumes:
+      - study-db:/var/lib/postgresql
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U study -d study']
+      interval: 5s
+      retries: 10
+  smtp:
+    image: axllent/mailpit:v1.27
+    ports:
+      - '127.0.0.1:1025:1025'
+      - '127.0.0.1:8025:8025'
+volumes:
+  study-db:

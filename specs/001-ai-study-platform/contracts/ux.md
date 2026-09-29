@@ -17,7 +17,7 @@ Impeccable orienta clareza, estados e crítica; Taste frontend-ui-engineering or
 | /entrar, /cadastro, /recuperar-senha | formulário curto, rótulos persistentes, feedback junto ao campo | enviando, inválido, indisponível, sessão expirada |
 | /conversas, /conversas/:id | histórico lateral, professor/estilo no topo, conversa central, editor ao fim; enviar pergunta | vazio orientado, gerando, resposta IA, falha/repetir, salvo |
 | painel Materiais da conversa | lista com arquivo, formato/tamanho, estado, seleção e exclusão | recebido, processando, pronto, falhou, limite atingido |
-| /provas/nova | tema/nível primeiro, total/tipos depois, fontes opcionais; gerar | padrão 10/5/5, soma inválida, cobertura insuficiente, gerando |
+| /provas/nova | conversa de origem primeiro, tema/nível depois, total/tipos e fontes opcionais; gerar | conversa vazia/indisponível, padrão 10/5/5, soma inválida, cobertura insuficiente, gerando |
 | /tentativas/:id | número da questão, enunciado, resposta e confirmar; navegação de 10–30 itens | rascunho/salvando/salvo/falhou, confirmado, corrigindo, feedback |
 | /tentativas/:id/resultado | situação da avaliação, nota quando válida, temas com evidências, praticar | completo, provisório, contestado, sem base válida |
 | /evolucao | próxima ação e temas, série por nível, filtros, tabela textual | vazio, insuficiente, dados completos, recomendações indisponíveis |

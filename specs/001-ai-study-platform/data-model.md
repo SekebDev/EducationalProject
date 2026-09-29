@@ -20,7 +20,7 @@ Pontos armazenados em inteiros de 0 a 10.000 unidades (1 ponto), evitando erro b
 | MaterialChunk | id, owner_id, material_id, extraction_version, ordinal, text, locator JSONB, token_count, embedding, embedding_model/dimensions; unique(material_id,extraction_version,ordinal) |
 | ConversationSource | owner_id, conversation_id, material_id; única por par; somente material pronto e ativo pertencente à conversa |
 | Topic | id, owner_id, display_name, normalized_name; unique(owner_id,normalized_name). Normalização trim/case/espaços, sem fusão automática de sinônimos |
-| Exam | id, owner_id, title, study_level, total, objective_count, essay_count, state, generation_operation_id único, source_recommendation_id nullable, origin_snapshot, created_at, deleted_at |
+| Exam | id, owner_id, conversation_id, context_snapshot, title, study_level, total, objective_count, essay_count, state, generation_operation_id único, source_recommendation_id nullable, origin_snapshot, created_at, deleted_at |
 | ExamTopic | owner_id, exam_id, topic_id, requested_count; em prática dirigida cada tema tem pelo menos uma questão |
 | ExamSource | owner_id, exam_id, material_id nullable, material_version, name_snapshot, available; conteúdo original não duplicado |
 | Question | id, owner_id, exam_id, ordinal, topic_id, study_level_snapshot, type, statement, statement_hash, alternatives públicas, source_locators; unique(exam_id,ordinal), unique(exam_id,statement_hash) |
@@ -36,7 +36,7 @@ Pontos armazenados em inteiros de 0 a 10.000 unidades (1 ponto), evitando erro b
 | IdempotencyRecord | owner_id, route, key, request_hash, resource_id, response_status; unique(owner_id,route,key); sem cache de resposta secreta; retido enquanto recurso existir |
 | DeletionRecord | resource_type/id, deleted_at, purge_state, purged_at; sem conteúdo; mantido por janela de backup + 7 dias para restaurar exclusões |
 
-Cada questão pertence a exatamente um tema principal. A prova e suas fontes não exigem conversa: provas sem upload/chat são válidas; fontes prontas de qualquer conversa do próprio estudante podem ser reutilizadas. Máximo dez fontes por prova como limite operacional inicial, visível na configuração.
+Cada questão pertence a exatamente um tema principal. Toda nova prova pertence a uma conversa do estudante com ao menos uma pergunta concluída. `exam.conversation_id` identifica a origem e `context_snapshot` conserva, no máximo, as 12 mensagens concluídas mais recentes, limitadas a 900 caracteres cada, para uma geração estável. Fontes opcionais devem ser materiais prontos da mesma conversa; máximo dez por prova. Provas criadas antes dessa regra podem ter origem nula durante a migração.
 
 ## Invariantes de publicação
 

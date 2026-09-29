@@ -1,0 +1,19 @@
+:root {
+  color-scheme: light;
+  --canvas: #f7f7f2;
+  --paper: #fff;
+  --ink: #202a27;
+  --muted: #53615a;
+  --line: #d5ddd6;
+  --accent: #1e5b49;
+  --accent-dark: #154736;
+  --error: #a52d35;
+  --warning: #775a17;
+  --focus: #134fbc;
+  font-family:
+    'Source Sans 3',
+    Segoe UI,
+    Arial,
+    sans-serif;
+  font-size: 16px;
+}

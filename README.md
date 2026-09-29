@@ -1,6 +1,24 @@
 # EducationalProject
 
-Plataforma de estudos com professor de IA. A [especificação](specs/001-ai-study-platform/spec.md) e o [plano de implementação](specs/001-ai-study-platform/plan.md) descrevem o produto e sua construção.
+Plataforma individual de estudos com professor de IA, materiais, provas formativas, evolução e prática dirigida. A [especificação](specs/001-ai-study-platform/spec.md), o [plano](specs/001-ai-study-platform/plan.md) e as [tarefas](specs/001-ai-study-platform/tasks.md) descrevem as regras do produto.
+
+## Ambiente de desenvolvimento
+
+Requer Node.js 24 LTS (veja `.node-version`), pnpm 10.34.5 e Docker Desktop com containers Linux. As versões e dependências do workspace são fixadas em `package.json` e `pnpm-lock.yaml`.
+
+```powershell
+Copy-Item -LiteralPath '.env.example' -Destination '.env'
+pnpm install --frozen-lockfile
+docker compose -f infra/compose.yaml up -d
+pnpm db:migrate
+pnpm dev
+```
+
+Substitua `SESSION_SECRET` em `.env` por valor aleatório com pelo menos 32 caracteres. Não use o valor de exemplo em produção. O Compose expõe PostgreSQL e SMTP apenas em `127.0.0.1`. A API usa a porta 3001 e o Next.js, 3000. `/api` é encaminhado para a API local.
+
+O fluxo inclui cadastro, recuperação de senha, conversas com três personalidades, PDF/DOCX/TXT como fontes, prova de 10 a 30 questões, respostas objetivas e discursivas, contestação, evolução por tema/período/nível e prática dirigida. Comece uma conversa, faça uma pergunta e use “Criar prova desta conversa”. O modo local `AI_PROVIDER=fake` exercita os fluxos com conteúdo de demonstração: ele não comprova qualidade pedagógica.
+
+Os comandos `pnpm format:check`, `pnpm lint`, `pnpm typecheck`, `pnpm test:unit`, `pnpm test:integration`, `pnpm test:contract`, `pnpm test:e2e` e `pnpm build` verificam o código. Configure `TEST_DATABASE_URL` para um banco isolado, por exemplo `study_test`. A suíte E2E inicia API e web nas portas 3101/3100 e usa armazenamento separado. Consulte a [validação](specs/001-ai-study-platform/validation.md), a [operação](docs/operations.md) e as tarefas.
 
 ## Fluxo de desenvolvimento
 
