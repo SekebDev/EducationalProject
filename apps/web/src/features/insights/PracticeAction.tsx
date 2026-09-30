@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import { Button } from '../../components/ui/button';
 
 export function PracticeAction({
   recommendationId,
@@ -6,11 +7,12 @@ export function PracticeAction({
   recommendationId: string;
 }) {
   return (
-    <Link
-      className="button secondary small"
-      href={`/provas/nova?recommendationId=${encodeURIComponent(recommendationId)}`}
-    >
-      Praticar este tema
-    </Link>
+    <Button asChild variant="outline">
+      <Link
+        href={`/provas/nova?recommendationId=${encodeURIComponent(recommendationId)}`}
+      >
+        Praticar este tema ↗
+      </Link>
+    </Button>
   );
 }

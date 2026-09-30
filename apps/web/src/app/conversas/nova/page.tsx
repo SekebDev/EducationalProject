@@ -3,9 +3,15 @@
 import { useState, type FormEvent } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+import { motion } from 'motion/react';
+import { useReducedMotion } from '@/lib/use-reduced-motion';
 import type { Conversation, Personality } from '@study/contracts';
+import { BlurFade } from '@/components/ui/blur-fade';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent } from '@/components/ui/card';
 import { StudyShell } from '../../../features/study/StudyShell';
 import { api, errorMessage } from '../../../lib/api';
+import styles from '../conversation-flow.module.css';
 
 const personalities: Array<{
   key: Personality;
@@ -15,18 +21,19 @@ const personalities: Array<{
   {
     key: 'acolhedora',
     name: 'Acolhedora',
-    description: 'Explica com calma e usa exemplos próximos do estudante.',
+    description: 'Explica com calma e usa exemplos próximos de você.',
   },
   {
     key: 'objetiva',
     name: 'Objetiva',
     description:
-      'Vai direto ao conceito e organiza a resposta em passos curtos.',
+      'Vai direto ao conceito, com respostas organizadas em passos curtos.',
   },
   {
     key: 'socratica',
     name: 'Socrática',
-    description: 'Conduz o raciocínio com perguntas antes da síntese.',
+    description:
+      'Ajuda você a pensar com perguntas antes de resumir a explicação.',
   },
 ];
 
@@ -36,6 +43,7 @@ export default function NewConversationPage() {
   const [title, setTitle] = useState('');
   const [pending, setPending] = useState(false);
   const [error, setError] = useState('');
+  const reducedMotion = useReducedMotion();
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setPending(true);
@@ -55,22 +63,47 @@ export default function NewConversationPage() {
   }
   return (
     <StudyShell title="Nova conversa">
-      <main className="main-content">
-        <div className="page-heading">
-          <div>
-            <span className="eyebrow">Começar a estudar</span>
-            <h2>Escolha seu professor</h2>
-            <p>O estilo pode mudar depois, sem perder o histórico.</p>
+      <main className={`main-content ${styles.newPage}`}>
+        <BlurFade delay={0.05} duration={0.5}>
+          <Link className={styles.backLink} href="/conversas">
+            <span aria-hidden="true">←</span> Voltar às conversas
+          </Link>
+          <div className={styles.newHeading}>
+            <span className={styles.kicker}>01 / NOVA CONVERSA</span>
+            <h2>
+              Aprender começa com
+              <br />
+              <em>uma boa conversa.</em>
+            </h2>
+            <p>
+              Escolha o jeito de ensinar que combina com você. Você pode mudar
+              depois.
+            </p>
           </div>
-        </div>
-        <form onSubmit={(event) => void submit(event)}>
-          <fieldset style={{ border: 0, padding: 0, margin: 0 }}>
-            <legend style={{ fontWeight: 700 }}>
+        </BlurFade>
+        <motion.form
+          className={styles.newForm}
+          onSubmit={(event) => void submit(event)}
+          initial={reducedMotion ? false : { opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.15, duration: 0.5 }}
+        >
+          <fieldset className={styles.fieldset} disabled={pending}>
+            <legend className={styles.legend}>
               Como você prefere aprender?
             </legend>
-            <div className="personality-grid">
+            <p className={styles.fieldHint}>
+              Não existe escolha errada. Encontre a voz que combina com você.
+            </p>
+            <div className={styles.personalityGrid}>
               {personalities.map((item) => (
-                <label className="personality-card" key={item.key}>
+                <motion.label
+                  className={styles.personalityCard}
+                  key={item.key}
+                  whileHover={reducedMotion || pending ? {} : { y: -5 }}
+                  whileTap={reducedMotion || pending ? {} : { scale: 0.98 }}
+                  transition={{ duration: 0.22 }}
+                >
                   <input
                     type="radio"
                     name="personality"
@@ -78,36 +111,50 @@ export default function NewConversationPage() {
                     checked={personality === item.key}
                     onChange={() => setPersonality(item.key)}
                   />
+                  <span className={styles.cardTop}>
+                    <span className={styles.personalityIcon} aria-hidden="true">
+                      {item.key === 'acolhedora'
+                        ? '✳'
+                        : item.key === 'objetiva'
+                          ? '↗'
+                          : '?'}
+                    </span>
+                    <span className={styles.radioIndicator} />
+                  </span>
                   <strong>{item.name}</strong>
                   <span>{item.description}</span>
-                </label>
+                </motion.label>
               ))}
             </div>
           </fieldset>
-          <div className="field" style={{ maxWidth: 550 }}>
-            <label htmlFor="conversation-title">
-              Nome da conversa <span className="hint">(opcional)</span>
-            </label>
-            <input
-              id="conversation-title"
-              maxLength={120}
-              placeholder="Ex.: Revisão de biologia"
-              value={title}
-              onChange={(event) => setTitle(event.target.value)}
-            />
-          </div>
+          <Card className={styles.titleCard}>
+            <CardContent className={styles.titleContent}>
+              <label htmlFor="conversation-title">
+                Dê um nome à conversa <span>(opcional)</span>
+              </label>
+              <input
+                id="conversation-title"
+                maxLength={120}
+                placeholder="Ex.: Revisão de biologia"
+                value={title}
+                disabled={pending}
+                onChange={(event) => setTitle(event.target.value)}
+              />
+              <p>Você pode deixar o nome para depois e começar agora.</p>
+            </CardContent>
+          </Card>
           {error && (
             <p className="form-error" role="alert">
               {error}
             </p>
           )}
-          <button className="button" type="submit" disabled={pending}>
-            {pending ? 'Criando…' : 'Começar conversa'}
-          </button>{' '}
-          <Link className="button ghost" href="/conversas">
-            Voltar
-          </Link>
-        </form>
+          <div className={styles.actions}>
+            <Button className={styles.submit} type="submit" disabled={pending}>
+              {pending ? 'Criando sua conversa…' : 'Começar conversa'}{' '}
+              <span aria-hidden="true">↗</span>
+            </Button>
+          </div>
+        </motion.form>
       </main>
     </StudyShell>
   );

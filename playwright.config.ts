@@ -12,10 +12,15 @@ export default defineConfig({
   testDir: './tests/e2e',
   fullyParallel: false,
   retries: 0,
+  // CI compiles routes on first visit and runs axe on shared runners.
+  timeout: process.env.CI ? 90_000 : 30_000,
+  expect: { timeout: process.env.CI ? 15_000 : 5_000 },
   use: {
     baseURL: process.env.PLAYWRIGHT_BASE_URL ?? 'http://localhost:3100',
     ...devices['Desktop Chrome'],
     channel: 'msedge',
+    trace: 'retain-on-failure',
+    screenshot: 'only-on-failure',
   },
   webServer: [
     {

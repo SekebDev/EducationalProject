@@ -1,28 +1,9 @@
-import { z } from 'zod';
+import type { CreateExamDto } from './dto/create-exam.dto.js';
+import { rawSchema } from './dto/create-exam.dto.js';
 import type pg from 'pg';
 import { PublicError } from '../../infrastructure/http/public-error.js';
 
-const rawSchema = z.strictObject({
-  conversationId: z.uuid(),
-  topicNames: z.array(z.string()).min(1).max(30),
-  studyLevel: z.string(),
-  total: z.number().int().min(10).max(30),
-  objectiveCount: z.number().int().min(0).max(30),
-  essayCount: z.number().int().min(0).max(30),
-  materialIds: z.array(z.uuid()).max(10),
-  originRecommendationId: z.uuid().optional(),
-});
-
-export type ExamConfig = {
-  conversationId: string;
-  topicNames: string[];
-  studyLevel: string;
-  total: number;
-  objectiveCount: number;
-  essayCount: number;
-  materialIds: string[];
-  originRecommendationId?: string;
-};
+export type ExamConfig = CreateExamDto;
 
 export type ExamSourceSnapshot = {
   id: string;

@@ -17,7 +17,8 @@ async function main(): Promise<void> {
   app.enableShutdownHooks();
   await app.listen(
     config.apiPort,
-    config.nodeEnv === 'production' ? '0.0.0.0' : '127.0.0.1',
+    config.apiHost ??
+      (config.nodeEnv === 'production' ? '0.0.0.0' : '127.0.0.1'),
   );
 }
 

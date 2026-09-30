@@ -153,3 +153,22 @@ Entregar primeiro Setup + Foundation + US1; validar V01–V02. Acrescentar mater
 - [ ] T056 Cobrir axe, teclado e 360/768/1024/1440 px nos cinco fluxos, estados vazio/erro/pendente e registrar a conferência manual de leitor de tela em `tests/e2e/accessibility.spec.ts` e `specs/001-ai-study-platform/validation.md` per FR-019/plan: UX evidence (partial).
 - [ ] T057 Exercitar desligamento/reinício físico do worker, backup/restore isolado com journal de exclusões e indisponibilidade temporária do storage, registrando evidências em `tests/operations/` e `docs/operations.md` per V16/V18/plan: recovery (partial).
 - [X] T058 Atualizar `specs/001-ai-study-platform/quickstart.md` para comandos e estado atuais, distinguindo testes locais aprovados de ensaios reais pendentes, per Constitution V (contradicts).
+
+## Phase 11: Ajustes solicitados
+
+- [X] T059 Configurar modelos OpenAI de baixo custo para chat, provas, correção e insights, mantendo embedding econômico e segredos fora do repositório, em `apps/api/src/infrastructure/ai/provider.ts`, `.env.example` e `specs/001-ai-study-platform/plan.md`.
+- [X] T060 Revisar as superfícies da entrada, navegação, conversas e respostas, com movimento discreto e respeito a `prefers-reduced-motion`, em `apps/web/src/app/globals.css`.
+
+**Dependências**: T059 depende da fundação de IA T013; T060 depende da UI T014/T046. Podem avançar em paralelo. A revisão humana e os ensaios de staging T054–T057 continuam independentes desses ajustes.
+
+## Phase 12: Chat, design e execução local solicitados
+
+- [X] T061 Refazer todas as páginas com shadcn/ui, Magic UI e Motion, incluindo chat com menu de professor, arquivos à direita e revisão dos textos; registrar em `docs/frontend-design-review.md`.
+- [X] T062 Aceitar materiais Markdown e renderizar respostas com títulos, tabelas, código copiável e diagramas Mermaid seguros no chat.
+- [X] T063 Integrar OpenAI real com modelo econômico, personalidades validadas e limites de foco educacional no servidor; registrar testes em `docs/chat-markdown-and-safety.md`.
+- [X] T064 Preparar Docker Compose para web, API, worker, migrações, PostgreSQL e SMTP, com segredos somente em runtime; documentar em `docs/docker.md`.
+- [X] T065 Concluir testes de navegador, acessibilidade e build das páginas alteradas, registrando resultados e mantendo a prévia disponível.
+
+**Dependências**: T063 usa T062 e a fundação de IA. T064 pode avançar em paralelo. T065 valida a integração das alterações. Os ensaios de staging e revisões humanas anteriores permanecem pendentes.
+
+- [X] T066 Adicionar arrastar e soltar arquivos na conversa, envio em lote, validação compartilhada, recuperação com idempotência e regressões desktop/mobile em MaterialsPanel e tests/e2e/materials.spec.ts.

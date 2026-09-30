@@ -12,6 +12,25 @@ Use uma implantação isolada com banco e bucket próprios, dados sintéticos e 
 
 Os testes `apps/api/test/jobs/operations.integration.spec.ts` cobrem retry/fence sem matar o processo. O ensaio físico acima ainda precisa ser executado no staging.
 
+Para cada interrupção, salve a linha de `operation` antes de parar o worker, após o lease expirar e após a recuperação. Consulte pelo ID concreto da operação, sem copiar dados pessoais para o relatório:
+
+```sql
+SELECT id, kind, resource_id, state, phase, dispatch_state,
+       attempt_count, fence_version, lease_until, error_code,
+       created_at, updated_at
+FROM operation WHERE id = :'operation_id'::uuid;
+
+SELECT sequence, type, created_at
+FROM operation_event WHERE operation_id = :'operation_id'::uuid
+ORDER BY sequence;
+
+SELECT role, state, count(*)
+FROM message WHERE turn_id = :'turn_id'::uuid
+GROUP BY role, state;
+```
+
+Uma operação recuperada deve terminar uma vez em `completed`; `fence_version` deve avançar quando um lease antigo é substituído. Para chat, confirme uma resposta `assistant` por `turn_id`. Para prova e correção, registre também os IDs da tentativa, resposta e revisão corrente e confira pela interface que não há duplicação. Se a operação ficar `pending`/`running`, ou se aparecerem duas respostas lógicas, anote a falha e não marque V16 como aprovado.
+
 ## V18: restauração e falha temporária de storage
 
 1. Faça backup cifrado do banco e bucket e exporte `deletion_record` separadamente; registre os instantes de cada cópia.
@@ -21,3 +40,23 @@ Os testes `apps/api/test/jobs/operations.integration.spec.ts` cobrem retry/fence
 5. Interrompa temporariamente o acesso ao bucket durante a purga; o registro deve continuar `pending`, e o acesso continuar revogado. Restaure o bucket e confira retry e `purged`.
 
 `apps/api/test/deletion/purge.integration.spec.ts` injeta uma falha de storage e verifica retry local. O ensaio completo do bucket S3 e do restore em staging ainda precisa ser executado.
+
+No banco restaurado, rode estas consultas antes de iniciar a API, imediatamente após o replay e após a purga. Use IDs sintéticos do ensaio. A consulta ao journal confirma que a cópia separada inclui exclusões posteriores ao backup:
+
+```sql
+SELECT resource_type, resource_id, deleted_at, purge_state, purged_at
+FROM deletion_record
+WHERE resource_id IN (:'conversation_id'::uuid, :'material_id'::uuid, :'attempt_id'::uuid)
+ORDER BY deleted_at;
+
+SELECT 'conversation' AS resource_type, id, deleted_at FROM conversation
+WHERE id = :'conversation_id'::uuid
+UNION ALL
+SELECT 'material', id, deleted_at FROM material
+WHERE id = :'material_id'::uuid
+UNION ALL
+SELECT 'attempt', id, deleted_at FROM attempt
+WHERE id = :'attempt_id'::uuid;
+```
+
+Após o replay, toda linha restaurada dos três recursos deve ter `deleted_at` preenchido e continuar inacessível por HTTP. Durante a falha do bucket, registre o horário e o `purge_state='pending'`; após restabelecer o acesso, registre `purge_state='purged'`, `purged_at` e a ausência do objeto no bucket. Guarde no relatório o tempo entre `deleted_at` e `purged_at` para comprovar o limite de 24 horas. Não publique IDs, URLs assinadas ou segredos do staging.

@@ -1,3 +1,10 @@
+import { ZodValidationPipe } from '../../infrastructure/http/zod-validation.pipe.js';
+import { practiceSchema } from './dto/create-practice.dto.js';
+import type { CreatePracticeDto } from './dto/create-practice.dto.js';
+import { ResourceIdPipe } from '../../infrastructure/http/resource-id.pipe.js';
+import { SessionGuard } from '../auth/session.guard.js';
+import { CurrentStudent } from '../auth/current-student.decorator.js';
+import type { CurrentStudentEntity } from '../auth/entities/student.entity.js';
 import {
   Body,
   Controller,
@@ -7,48 +14,40 @@ import {
   Inject,
   Param,
   Post,
-  Req,
+  UseGuards,
 } from '@nestjs/common';
-import type { Request } from 'express';
-import { z } from 'zod';
-import { AuthService } from '../auth/auth.service.js';
-import { getCookie } from '../../infrastructure/http/cookies.js';
-import { PublicError } from '../../infrastructure/http/public-error.js';
 import { PracticeService } from './practice.service.js';
 
-function validId(id: string) {
-  if (!z.uuid().safeParse(id).success) {
-    throw new PublicError(404, 'NOT_FOUND', 'Recomendação não encontrada.');
-  }
-  return id;
-}
-
+@UseGuards(SessionGuard)
 @Controller('api/v1/recommendations')
 export class PracticeController {
   constructor(
-    @Inject(AuthService) private readonly auth: AuthService,
     @Inject(PracticeService) private readonly practice: PracticeService,
   ) {}
 
   @Get(':id')
-  async get(@Req() request: Request, @Param('id') id: string) {
-    const student = await this.auth.currentStudent(
-      getCookie(request, 'study_session'),
-    );
-    return this.practice.get(student.id, validId(id));
+  async get(
+    @CurrentStudent() student: CurrentStudentEntity,
+    @Param('id', new ResourceIdPipe('Recomendação não encontrada.')) id: string,
+  ) {
+    return this.practice.get(student.id, id);
   }
 
   @Post(':id/practice')
   @HttpCode(202)
   async create(
-    @Req() request: Request,
-    @Param('id') id: string,
+    @CurrentStudent() student: CurrentStudentEntity,
+    @Param('id', new ResourceIdPipe('Recomendação não encontrada.')) id: string,
     @Headers('idempotency-key') key: string,
-    @Body() body: unknown,
+    @Body(
+      new ZodValidationPipe(
+        practiceSchema,
+        'INVALID_PRACTICE',
+        'Confira a configuração da prática.',
+      ),
+    )
+    body: CreatePracticeDto,
   ) {
-    const student = await this.auth.currentStudent(
-      getCookie(request, 'study_session'),
-    );
-    return this.practice.create(student.id, validId(id), key, body);
+    return this.practice.create(student.id, id, key, body);
   }
 }

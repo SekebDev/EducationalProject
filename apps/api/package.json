@@ -19,6 +19,7 @@
     "argon2": "0.45.1",
     "busboy": "1.6.0",
     "mammoth": "1.10.0",
+    "mdast-util-from-markdown": "2.0.3",
     "nodemailer": "10.0.8",
     "openai": "7.23.0",
     "pdfjs-dist": "6.3.289",

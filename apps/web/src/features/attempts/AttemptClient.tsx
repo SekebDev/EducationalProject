@@ -3,6 +3,13 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import { api, errorMessage, RequestError } from '../../lib/api';
+import { Button } from '../../components/ui/button';
+import { Progress } from '../../components/ui/progress';
+import { BlurFade } from '../../components/ui/blur-fade';
+import { Badge } from '../../components/ui/badge';
+import { NumberTicker } from '../../components/ui/number-ticker';
+import { Check, Send, Sparkles } from 'lucide-react';
+import styles from './practice.module.css';
 
 type Feedback = {
   points: number | null;
@@ -91,7 +98,10 @@ function QuestionInput({
 
 function FeedbackPanel({ feedback }: { feedback: Feedback }) {
   return (
-    <div className="answer-feedback">
+    <BlurFade className="answer-feedback" offset={3} blur="3px">
+      <span className={styles.feedbackLabel}>
+        <Sparkles aria-hidden="true" /> Sua correção
+      </span>
       <strong>
         Nota:{' '}
         {feedback.points === null
@@ -113,7 +123,7 @@ function FeedbackPanel({ feedback }: { feedback: Feedback }) {
         </p>
       ))}
       {feedback.explanation && <p>{feedback.explanation}</p>}
-    </div>
+    </BlurFade>
   );
 }
 
@@ -123,6 +133,7 @@ export function AttemptClient({ id }: { id: string }) {
   const [saving, setSaving] = useState<Record<string, boolean>>({});
   const [dirty, setDirty] = useState<Record<string, boolean>>({});
   const [working, setWorking] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [confirmBlanks, setConfirmBlanks] = useState(false);
   const [error, setError] = useState('');
   const latest = useRef<Record<string, string>>({});
@@ -154,9 +165,23 @@ export function AttemptClient({ id }: { id: string }) {
   }, [id]);
 
   useEffect(() => {
-    void refresh().catch((cause: unknown) => setError(errorMessage(cause)));
+    void refresh()
+      .catch((cause: unknown) => setError(errorMessage(cause)))
+      .finally(() => setLoading(false));
     return () => Object.values(timers.current).forEach(clearTimeout);
   }, [refresh]);
+
+  async function retryLoad() {
+    setLoading(true);
+    setError('');
+    try {
+      await refresh();
+    } catch (cause) {
+      setError(errorMessage(cause));
+    } finally {
+      setLoading(false);
+    }
+  }
 
   useEffect(() => {
     if (!attempt || !['submitted_pending'].includes(attempt.state)) {
@@ -282,111 +307,199 @@ export function AttemptClient({ id }: { id: string }) {
   }
 
   if (!attempt) {
-    return <p aria-busy="true">Carregando tentativa… {error}</p>;
+    return loading ? (
+      <p role="status" aria-busy="true">
+        Carregando tentativa…
+      </p>
+    ) : (
+      <div className="progress-panel">
+        <p className="form-error" role="alert">
+          Não foi possível carregar a tentativa. {error}
+        </p>
+        <Button variant="outline" onClick={() => void retryLoad()}>
+          Tentar novamente
+        </Button>
+      </div>
+    );
   }
+  const confirmedCount = attempt.questions.filter(
+    (question) =>
+      question.answer &&
+      ['confirmed_pending', 'graded'].includes(question.answer.state),
+  ).length;
   return (
     <>
-      <div className="page-heading">
+      <BlurFade className="page-heading" delay={0.04}>
         <div>
-          <span className="eyebrow">Prática formativa</span>
+          <span className={styles.tagline}>Seu momento de praticar</span>
           <h2>Responder prova</h2>
           <p>
             {attempt.questions.length} questões ·{' '}
             {attempt.state === 'in_progress' ? 'Em andamento' : 'Entregue'}
           </p>
         </div>
-        <Link href={`/provas/${attempt.examId}`}>Ver prova</Link>
-      </div>
+        <Button asChild variant="outline">
+          <Link href={`/provas/${attempt.examId}`}>Ver prova</Link>
+        </Button>
+      </BlurFade>
       {error && (
         <p className="form-error" role="alert">
           {error}
         </p>
       )}
       {attempt.state !== 'in_progress' && (
-        <div className="progress-panel">
+        <BlurFade className="progress-panel">
           <h3>
             {attempt.state === 'completed'
               ? 'Correção concluída'
               : 'Correção em andamento'}
           </h3>
-          <Link className="button" href={`/tentativas/${id}/resultado`}>
-            Ver resultado
-          </Link>
-        </div>
+          <Button asChild>
+            <Link href={`/tentativas/${id}/resultado`}>Ver resultado</Link>
+          </Button>
+        </BlurFade>
       )}
+      <BlurFade className="progress-panel" delay={0.1}>
+        <div className={styles.metric}>
+          <strong>
+            <NumberTicker value={confirmedCount} />
+          </strong>
+          <span>de {attempt.questions.length} questões confirmadas</span>
+        </div>
+        <Progress
+          className={styles.progressLine}
+          value={Math.round(
+            (confirmedCount / Math.max(attempt.questions.length, 1)) * 100,
+          )}
+          aria-label="Questões confirmadas"
+        />
+        <nav
+          className={styles.questionNav}
+          aria-label="Navegação pelas questões"
+        >
+          <span className={styles.questionNavLabel}>Suas questões</span>
+          {attempt.questions.map((question) => (
+            <span key={question.id}>
+              <a
+                className={
+                  question.answer &&
+                  ['confirmed_pending', 'graded'].includes(
+                    question.answer.state,
+                  )
+                    ? styles.confirmedQuestion
+                    : undefined
+                }
+                href={`#questao-${question.ordinal}`}
+                aria-label={`Ir para questão ${question.ordinal}${
+                  question.answer &&
+                  ['confirmed_pending', 'graded'].includes(
+                    question.answer.state,
+                  )
+                    ? ', confirmada'
+                    : ', não confirmada'
+                }`}
+              >
+                {question.ordinal}
+              </a>
+            </span>
+          ))}
+        </nav>
+      </BlurFade>
       <div className="question-list">
-        {attempt.questions.map((question) => {
+        {attempt.questions.map((question, index) => {
           const locked =
             attempt.state !== 'in_progress' ||
             Boolean(question.answer && question.answer.state !== 'draft');
           const feedback = question.answer?.feedback;
           return (
-            <article className="question-preview" key={question.id}>
-              <span className="eyebrow">
-                Questão {question.ordinal} · {question.topic} ·{' '}
-                {question.type === 'objective' ? 'Objetiva' : 'Discursiva'}
-              </span>
-              <h3>{question.statement}</h3>
-              <QuestionInput
-                question={question}
-                value={values[question.id] ?? ''}
-                disabled={locked || working}
-                onChange={(value) => change(question.id, value)}
-              />
-              {attempt.state === 'in_progress' && !locked && (
-                <div className="answer-actions">
-                  <span className="hint">
-                    {saving[question.id]
-                      ? 'Salvando rascunho…'
-                      : dirty[question.id]
-                        ? 'Alteração ainda não salva'
-                        : 'Rascunho salvo automaticamente'}
+            <div id={`questao-${question.ordinal}`} key={question.id}>
+              <BlurFade
+                className="question-preview"
+                delay={Math.min(index * 0.04, 0.28)}
+              >
+                <div className={styles.questionMeta}>
+                  <span className={styles.questionOrdinal}>
+                    Questão {String(question.ordinal).padStart(2, '0')}
                   </span>
-                  <button
-                    className="button secondary small"
-                    disabled={working || !(values[question.id] ?? '').trim()}
-                    onClick={() => void confirm(question)}
-                  >
-                    Confirmar resposta
-                  </button>
+                  <Badge variant="secondary">{question.topic}</Badge>
+                  <Badge variant="outline">
+                    {question.type === 'objective' ? 'Objetiva' : 'Discursiva'}
+                  </Badge>
+                  {question.answer &&
+                    ['confirmed_pending', 'graded'].includes(
+                      question.answer.state,
+                    ) && (
+                      <Badge variant="outline">
+                        <Check aria-hidden="true" /> Confirmada
+                      </Badge>
+                    )}
                 </div>
-              )}
-              {question.answer?.state === 'confirmed_pending' && (
-                <p className="hint">
-                  Resposta confirmada. A correção está pendente.
-                </p>
-              )}
-              {question.answer?.gradeState === 'failed' && (
-                <p className="form-error">
-                  A correção falhou. Seu texto permanece salvo.
-                </p>
-              )}
-              {feedback && <FeedbackPanel feedback={feedback} />}
-            </article>
+                <h3>{question.statement}</h3>
+                <QuestionInput
+                  question={question}
+                  value={values[question.id] ?? ''}
+                  disabled={locked || working}
+                  onChange={(value) => change(question.id, value)}
+                />
+                {attempt.state === 'in_progress' && !locked && (
+                  <div className="answer-actions">
+                    <span
+                      className="hint"
+                      role="status"
+                      aria-live="polite"
+                      aria-atomic="true"
+                    >
+                      {saving[question.id]
+                        ? 'Salvando rascunho…'
+                        : dirty[question.id]
+                          ? 'Alteração ainda não foi salva'
+                          : 'Rascunho salvo automaticamente'}
+                    </span>
+                    <Button
+                      variant="outline"
+                      disabled={working || !(values[question.id] ?? '').trim()}
+                      onClick={() => void confirm(question)}
+                    >
+                      Confirmar resposta
+                    </Button>
+                  </div>
+                )}
+                {question.answer?.state === 'confirmed_pending' && (
+                  <p className="hint">
+                    Resposta confirmada. Aguardando correção.
+                  </p>
+                )}
+                {question.answer?.gradeState === 'failed' && (
+                  <p className="form-error">
+                    A correção falhou. Seu texto permanece salvo.
+                  </p>
+                )}
+                {feedback && <FeedbackPanel feedback={feedback} />}
+              </BlurFade>
+            </div>
           );
         })}
       </div>
       {attempt.state === 'in_progress' && (
-        <div className="submit-panel">
+        <BlurFade className="submit-panel" inView>
+          <span className={styles.feedbackLabel}>
+            <Send aria-hidden="true" /> Finalizar sua prática
+          </span>
           <h3>Entregar tentativa</h3>
           <p>Rascunhos não confirmados contam como questões em branco.</p>
-          <button
-            className="button"
-            disabled={working}
-            onClick={() => void submit(false)}
-          >
+          <Button disabled={working} onClick={() => void submit(false)}>
             Entregar tentativa
-          </button>
+          </Button>
           {confirmBlanks && (
-            <button
-              className="button danger"
+            <Button
+              variant="destructive"
               disabled={working}
               onClick={() => void submit(true)}
             >
               Confirmar entrega com respostas em branco
-            </button>
+            </Button>
           )}
-        </div>
+        </BlurFade>
       )}
     </>
   );

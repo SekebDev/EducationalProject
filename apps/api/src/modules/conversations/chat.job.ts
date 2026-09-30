@@ -7,6 +7,10 @@ import { personalityStyleAtVersion } from './personalities.js';
 import type { PersonalityKey } from './personalities.js';
 import { retrieveChunks } from '../materials/retrieval.js';
 import { validateChatCitations } from './sources.service.js';
+import {
+  enforceStudyChatOutput,
+  studyRequestRedirect,
+} from '../../infrastructure/ai/study-chat-policy.js';
 
 type ChatRow = {
   id: string;
@@ -78,21 +82,28 @@ export function createChatJobHandler(databaseUrl: string): JobHandler {
     const activeVersions = new Map(
       availableSources.rows.map((row) => [row.id, row.version]),
     );
-    const chunks = await retrieveChunks(
-      lease.ownerId,
-      message.conversation_id,
-      message.source_snapshot,
-      message.question,
-    );
-    const response = await provider.chat({
-      question: message.question,
-      personality: personalityStyleAtVersion(
-        message.personality_snapshot,
-        message.personality_version_snapshot,
-      ),
-      history: filterActiveHistory(history.rows.reverse(), activeVersions),
-      sources: chunks.map((chunk) => ({ id: chunk.id, text: chunk.text })),
-    });
+    const redirect = studyRequestRedirect(message.question);
+    const chunks = redirect
+      ? []
+      : await retrieveChunks(
+          lease.ownerId,
+          message.conversation_id,
+          message.source_snapshot,
+          message.question,
+        );
+    const response =
+      redirect ??
+      enforceStudyChatOutput(
+        await provider.chat({
+          question: message.question,
+          personality: personalityStyleAtVersion(
+            message.personality_snapshot,
+            message.personality_version_snapshot,
+          ),
+          history: filterActiveHistory(history.rows.reverse(), activeVersions),
+          sources: chunks.map((chunk) => ({ id: chunk.id, text: chunk.text })),
+        }),
+      );
     const cited = validateChatCitations(response, chunks);
     const content = [
       ...response.segments.map((segment) => segment.text),
@@ -148,7 +159,7 @@ export function createChatJobHandler(databaseUrl: string): JobHandler {
             lease.resourceId,
             safeContent,
             readConfig(process.env).aiProvider,
-            `chat-v1-personality-${message.personality_version_snapshot}`,
+            `chat-v2-personality-${message.personality_version_snapshot}`,
             JSON.stringify(references),
           ],
         );
