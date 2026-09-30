@@ -64,13 +64,15 @@ e ausentes, verificando referências, limites e seleção dos materiais.
 
 ### User Story 3 - Gerar e responder uma prova com correção (Priority: P2)
 
-O estudante escolhe assunto, nível de estudo, materiais opcionais, quantidade e tipos de questões.
+O estudante inicia a prova de uma conversa com pelo menos uma pergunta concluída. Escolhe assuntos,
+nível de estudo, materiais opcionais, quantidade e tipos de questões. A geração considera um snapshot
+limitado das mensagens concluídas dessa conversa, preservado para que a prova não mude quando o chat continuar.
 Responde às questões, recebe explicações nas objetivas e correção fundamentada nas discursivas.
 
 **Why this priority**: Converte o estudo em prática verificável e produz dados para o acompanhamento.
 
-**Independent Test**: Gerar provas de 10 e 30 questões com tema informado, sem depender do chat
-ou de uploads, responder uma objetiva e uma discursiva e conferir a avaliação final.
+**Independent Test**: Gerar provas de 10 e 30 questões a partir de uma conversa existente,
+sem depender de uploads, responder uma objetiva e uma discursiva e conferir a avaliação final.
 
 **Acceptance Scenarios**:
 
