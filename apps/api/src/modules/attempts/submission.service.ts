@@ -1,3 +1,4 @@
+import type { ResultEntity } from './entities/submission.entity.js';
 import { Injectable } from '@nestjs/common';
 import { readConfig } from '../../infrastructure/config.js';
 import { createPool, transaction } from '../../infrastructure/db/pool.js';
@@ -7,20 +8,6 @@ import { recordDeletion } from '../../infrastructure/deletion/deletion-record.js
 export function displayPoints(units: number): number {
   return Math.floor((units + 50) / 100) / 100;
 }
-
-type ResultRow = {
-  answer_id: string;
-  question_id: string;
-  ordinal: number;
-  type: 'objective' | 'essay';
-  topic: string;
-  answer_state: string | null;
-  grade_state: string | null;
-  points_units: number | null;
-  current_revision_id: string | null;
-  dispute_id: string | null;
-  dispute_status: string | null;
-};
 
 @Injectable()
 export class SubmissionService {
@@ -156,7 +143,7 @@ export class SubmissionService {
         'Entregue a tentativa para consultar o resultado.',
       );
     }
-    const rows = await this.pool.query<ResultRow>(
+    const rows = await this.pool.query<ResultEntity>(
       `SELECT a.id AS answer_id,q.id AS question_id,q.ordinal,q.type,t.display_name AS topic,
          a.state AS answer_state,gc.state AS grade_state,gr.points_units,gc.current_revision_id,
          d.id AS dispute_id,d.status AS dispute_status

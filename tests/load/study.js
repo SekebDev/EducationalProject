@@ -69,8 +69,7 @@ function requireStatus(response, status, label) {
   return response.json();
 }
 
-function waitFor(path, accepted, limitMs, metric, label) {
-  const start = Date.now();
+function waitFor(path, accepted, limitMs, metric, label, start) {
   while (Date.now() - start < limitMs) {
     const response = request('GET', path);
     if (response.status === 200) {
@@ -114,6 +113,7 @@ export default function () {
     201,
     'conversa criada',
   );
+  const chatStart = Date.now();
   const send = requireStatus(
     request('POST', `/conversations/${conversation.id}/messages`, {
       content: 'Explique um conceito de biologia.',
@@ -128,7 +128,9 @@ export default function () {
     10000,
     chatMs,
     'chat concluído em 10s',
+    chatStart,
   );
+  const examStart = Date.now();
   const exam = requireStatus(
     request('POST', '/exams', {
       conversationId: conversation.id,
@@ -148,30 +150,49 @@ export default function () {
     90000,
     examMs,
     'prova pronta em 90s',
+    examStart,
   );
   const attempt = requireStatus(
     request('GET', `/attempts/${ready.attemptId}`),
     200,
     'tentativa disponível',
   );
-  const objective = attempt.questions.find((item) => item.type === 'objective');
+  const objectives = attempt.questions.filter(
+    (item) => item.type === 'objective',
+  );
   const essay = attempt.questions.find((item) => item.type === 'essay');
-  if (!objective || !essay) {
+  if (objectives.length !== 9 || !essay) {
     fail('Prova sem objetiva e discursiva');
   }
-  const confirmStart = Date.now();
-  const feedback = requireStatus(
-    request('POST', `/attempts/${attempt.id}/answers/${objective.id}/confirm`, {
-      value: 'A',
-      expectedVersion: 0,
-    }),
-    201,
-    'objetiva confirmada',
-  );
-  objectiveMs.add(Date.now() - confirmStart);
-  check(feedback, {
-    'feedback objetivo em 2s': () => Date.now() - confirmStart <= 2000,
-  });
+  for (const objective of objectives) {
+    const optionId = objective.alternatives?.[0]?.id;
+    if (!optionId) {
+      fail('Objetiva sem alternativa pública');
+    }
+    const confirmStart = Date.now();
+    const feedback = requireStatus(
+      request(
+        'POST',
+        `/attempts/${attempt.id}/answers/${objective.id}/confirm`,
+        {
+          value: optionId,
+          expectedVersion: 0,
+        },
+      ),
+      201,
+      'objetiva confirmada',
+    );
+    const elapsed = Date.now() - confirmStart;
+    objectiveMs.add(elapsed);
+    check(feedback, {
+      'feedback objetivo completo em 2s': (item) =>
+        item.status === 'graded' &&
+        item.correctOptionId &&
+        item.optionExplanations?.length === 4 &&
+        elapsed <= 2000,
+    });
+  }
+  const gradeStart = Date.now();
   requireStatus(
     request('POST', `/attempts/${attempt.id}/answers/${essay.id}/confirm`, {
       value: 'Resposta sintética para medir a correção.',
@@ -188,5 +209,6 @@ export default function () {
     60000,
     gradeMs,
     'discursiva corrigida em 60s',
+    gradeStart,
   );
 }

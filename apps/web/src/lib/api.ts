@@ -77,6 +77,7 @@ export async function api<T>(
     method?: 'GET' | 'POST' | 'PATCH' | 'PUT' | 'DELETE';
     body?: unknown;
     idempotent?: boolean;
+    idempotencyKey?: string;
     signal?: AbortSignal;
     responseSchema?: ResponseSchema<T>;
   } = {},
@@ -85,8 +86,11 @@ export async function api<T>(
   const headers = new Headers();
   if (method !== 'GET') {
     headers.set('X-CSRF-Token', await csrf());
-    if (options.idempotent) {
-      headers.set('Idempotency-Key', crypto.randomUUID());
+    if (options.idempotent || options.idempotencyKey) {
+      headers.set(
+        'Idempotency-Key',
+        options.idempotencyKey ?? crypto.randomUUID(),
+      );
     }
   }
   if (options.body !== undefined && !(options.body instanceof FormData)) {

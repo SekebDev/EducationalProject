@@ -5,6 +5,7 @@ import { migrate } from '../../src/infrastructure/db/migrate.js';
 import { OperationRepository } from '../../src/infrastructure/jobs/operations.js';
 import { ConversationsService } from '../../src/modules/conversations/conversations.service.js';
 import { createChatJobHandler } from '../../src/modules/conversations/chat.job.js';
+import { PERSONALITY_CATALOG_VERSION } from '../../src/modules/conversations/personalities.js';
 
 const databaseUrl = process.env.TEST_DATABASE_URL;
 
@@ -78,7 +79,9 @@ describe.skipIf(!databaseUrl)('conversation and chat behavior', () => {
       }>('SELECT personality_version_snapshot FROM message WHERE id=$1', [
         first.assistantMessageId,
       ]);
-      expect(snapshot.rows[0]?.personality_version_snapshot).toBe(1);
+      expect(snapshot.rows[0]?.personality_version_snapshot).toBe(
+        PERSONALITY_CATALOG_VERSION,
+      );
 
       const updated = await service.update(ownerId, conversation.id, {
         personality: 'socratica',
@@ -106,6 +109,32 @@ describe.skipIf(!databaseUrl)('conversation and chat behavior', () => {
       expect(messages.items[1]?.personality).toBe('acolhedora');
       expect(messages.items[1]?.state).toBe('completed');
       expect(messages.items[1]?.content).toContain('Modo de demonstração');
+      const blocked = await service.sendMessage(
+        ownerId,
+        conversation.id,
+        randomUUID(),
+        {
+          content: 'Crie um aplicativo completo pronto para uso.',
+          conversationVersion: updated.version,
+        },
+      );
+      const blockedLease = await operations.acquire(
+        blocked.operationId,
+        ownerId,
+        updated.version,
+      );
+      if (!blockedLease) {
+        throw new Error('Lease de redirecionamento ausente');
+      }
+      const redirected = await handler(blockedLease);
+      expect(await operations.complete(blockedLease, redirected.apply)).toBe(
+        true,
+      );
+      const guardedHistory = await service.messages(ownerId, conversation.id);
+      expect(guardedHistory.items[3]?.content).toContain(
+        'Não entrego aplicativos',
+      );
+      expect(guardedHistory.items[3]?.references).toEqual([]);
       await service.delete(ownerId, conversation.id);
       await expect(service.get(ownerId, conversation.id)).rejects.toMatchObject(
         {

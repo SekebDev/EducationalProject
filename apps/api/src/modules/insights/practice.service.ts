@@ -1,19 +1,10 @@
 import { Inject, Injectable } from '@nestjs/common';
-import { z } from 'zod';
+import { practiceSchema } from './dto/create-practice.dto.js';
 import { readConfig } from '../../infrastructure/config.js';
 import { createPool } from '../../infrastructure/db/pool.js';
 import { PublicError } from '../../infrastructure/http/public-error.js';
 import { ExamsService } from '../exams/exams.service.js';
 import { RecommendationsService } from './recommendations.service.js';
-
-const practiceSchema = z.strictObject({
-  topicIds: z.array(z.uuid()).min(1).max(30),
-  total: z.number().int().min(10).max(30),
-  objectiveCount: z.number().int().min(0).max(30),
-  essayCount: z.number().int().min(0).max(30),
-  studyLevel: z.string().trim().min(1).max(200),
-  materialIds: z.array(z.uuid()).max(10),
-});
 
 export function parsePractice(value: unknown, allowedTopics: string[]) {
   const parsed = practiceSchema.safeParse(value);

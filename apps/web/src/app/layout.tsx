@@ -1,5 +1,8 @@
 import type { ReactNode } from 'react';
+import '@fontsource-variable/dm-sans';
+import '@fontsource-variable/fraunces';
 import './globals.css';
+import { StudyMotion } from '@/components/StudyMotion';
 
 export const metadata = {
   title: 'Caderno · Professor de IA',
@@ -9,7 +12,9 @@ export const metadata = {
 export default function RootLayout({ children }: { children: ReactNode }) {
   return (
     <html lang="pt-BR">
-      <body>{children}</body>
+      <body>
+        <StudyMotion>{children}</StudyMotion>
+      </body>
     </html>
   );
 }

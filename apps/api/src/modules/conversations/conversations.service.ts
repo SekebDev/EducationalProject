@@ -1,3 +1,12 @@
+import type {
+  CreateConversationDto,
+  UpdateConversationDto,
+  SendMessageDto,
+} from './dto/conversations.dto.js';
+import type {
+  ConversationEntity,
+  MessageEntity,
+} from './entities/conversations.entity.js';
 import { randomUUID } from 'node:crypto';
 import { Injectable } from '@nestjs/common';
 import { readConfig } from '../../infrastructure/config.js';
@@ -9,24 +18,6 @@ import { OperationRepository } from '../../infrastructure/jobs/operations.js';
 import { PERSONALITY_CATALOG_VERSION } from './personalities.js';
 import type { PersonalityKey } from './personalities.js';
 
-type ConversationRow = {
-  id: string;
-  title: string;
-  personality_key: PersonalityKey;
-  version: number;
-  created_at: Date;
-};
-type MessageRow = {
-  id: string;
-  sequence: number;
-  role: 'user' | 'assistant';
-  content: string;
-  state: string;
-  personality_snapshot: PersonalityKey;
-  references_json: unknown;
-  operation_id: string | null;
-};
-
 @Injectable()
 export class ConversationsService {
   private readonly pool = createPool(readConfig(process.env).databaseUrl);
@@ -34,11 +25,7 @@ export class ConversationsService {
     readConfig(process.env).databaseUrl,
   );
 
-  async create(
-    ownerId: string,
-    key: string,
-    input: { title?: string | undefined; personality: PersonalityKey },
-  ) {
+  async create(ownerId: string, key: string, input: CreateConversationDto) {
     const result = await withIdempotency(
       this.pool,
       { ownerId, route: 'POST /conversations', key, body: input },
@@ -65,7 +52,7 @@ export class ConversationsService {
   }
 
   async get(ownerId: string, id: string) {
-    const result = await this.pool.query<ConversationRow>(
+    const result = await this.pool.query<ConversationEntity>(
       'SELECT id,title,personality_key,version,created_at FROM conversation WHERE owner_id=$1 AND id=$2 AND deleted_at IS NULL',
       [ownerId, id],
     );
@@ -102,7 +89,7 @@ export class ConversationsService {
         throw new PublicError(400, 'CURSOR_INVALID', 'Página inválida.');
       }
     }
-    const result = await this.pool.query<ConversationRow>(
+    const result = await this.pool.query<ConversationEntity>(
       `SELECT id,title,personality_key,version,created_at FROM conversation
        WHERE owner_id=$1 AND deleted_at IS NULL AND ($2::timestamptz IS NULL OR (created_at,id)<($2::timestamptz,$3::uuid))
        ORDER BY created_at DESC,id DESC LIMIT 21`,
@@ -130,15 +117,7 @@ export class ConversationsService {
     };
   }
 
-  async update(
-    ownerId: string,
-    id: string,
-    input: {
-      title?: string | undefined;
-      personality?: PersonalityKey | undefined;
-      version: number;
-    },
-  ) {
+  async update(ownerId: string, id: string, input: UpdateConversationDto) {
     const result = await this.pool.query(
       `UPDATE conversation SET title=COALESCE($4,title),personality_key=COALESCE($5,personality_key),version=version+1
        WHERE owner_id=$1 AND id=$2 AND version=$3 AND deleted_at IS NULL RETURNING id`,
@@ -201,7 +180,7 @@ export class ConversationsService {
 
   async messages(ownerId: string, conversationId: string, after = 0) {
     await this.get(ownerId, conversationId);
-    const result = await this.pool.query<MessageRow>(
+    const result = await this.pool.query<MessageEntity>(
       `SELECT m.id,m.sequence,m.role,m.content,m.state,m.personality_snapshot,m.references_json,o.id AS operation_id FROM message m
        LEFT JOIN operation o ON o.resource_id=m.id AND o.kind='answer-chat' AND o.owner_id=m.owner_id
        WHERE m.owner_id=$1 AND m.conversation_id=$2 AND m.sequence>$3 ORDER BY m.sequence LIMIT 101`,
@@ -261,7 +240,7 @@ export class ConversationsService {
     ownerId: string,
     conversationId: string,
     key: string,
-    input: { content: string; conversationVersion: number },
+    input: SendMessageDto,
   ) {
     const result = await withIdempotency(
       this.pool,

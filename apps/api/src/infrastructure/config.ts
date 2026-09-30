@@ -6,6 +6,7 @@ const environmentSchema = z
       .enum(['development', 'test', 'production'])
       .default('development'),
     API_PORT: z.coerce.number().int().min(1).max(65535).default(3001),
+    API_HOST: z.enum(['127.0.0.1', '0.0.0.0']).optional(),
     DATABASE_URL: z.url().startsWith('postgres://'),
     APP_ORIGIN: z.url(),
     SESSION_SECRET: z.string().min(32),
@@ -74,6 +75,7 @@ const environmentSchema = z
 export type AppConfig = {
   nodeEnv: 'development' | 'test' | 'production';
   apiPort: number;
+  apiHost?: '127.0.0.1' | '0.0.0.0';
   databaseUrl: string;
   appOrigin: string;
   sessionSecret: string;
@@ -102,6 +104,9 @@ export function readConfig(environment: NodeJS.ProcessEnv): AppConfig {
   return {
     nodeEnv: value.NODE_ENV,
     apiPort: value.API_PORT,
+    apiHost:
+      value.API_HOST ??
+      (value.NODE_ENV === 'production' ? '0.0.0.0' : '127.0.0.1'),
     databaseUrl: value.DATABASE_URL,
     appOrigin: value.APP_ORIGIN,
     sessionSecret: value.SESSION_SECRET,

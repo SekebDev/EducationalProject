@@ -51,11 +51,12 @@ test.afterEach(async () => {
 test('prova, rascunho, correção parcial e entrega com brancas', async ({
   page,
 }) => {
+  await page.emulateMedia({ reducedMotion: 'reduce' });
   await page.goto('/cadastro');
   const email = `exam-${crypto.randomUUID()}@example.invalid`;
   emails.push(email);
   await page.getByLabel('E-mail').fill(email);
-  await page.getByLabel('Senha').fill('valid-password-1234');
+  await page.getByLabel('Senha', { exact: true }).fill('valid-password-1234');
   await page.getByRole('button', { name: 'Criar conta' }).click();
   await expect(page).toHaveURL(/\/conversas$/);
   await page.goto('/conversas/nova');
@@ -83,6 +84,10 @@ test('prova, rascunho, correção parcial e entrega com brancas', async ({
         .violations,
       `Axe na tentativa a ${width}px`,
     ).toEqual([]);
+    await page.screenshot({
+      path: test.info().outputPath(`tentativa-${width}.png`),
+      fullPage: true,
+    });
   }
   const attemptUrl = page.url();
   const question = page.locator('.question-preview').first();
@@ -141,15 +146,19 @@ test('prova, rascunho, correção parcial e entrega com brancas', async ({
         .violations,
       `Axe no resultado a ${width}px`,
     ).toEqual([]);
+    await page.screenshot({
+      path: test.info().outputPath(`resultado-${width}.png`),
+      fullPage: true,
+    });
   }
   const graded = page.locator('.question-preview').first();
   await graded
     .getByLabel('Contestar correção')
     .fill('Quero revisar a correção da questão.');
   await graded.getByRole('button', { name: 'Enviar contestação' }).click();
-  await expect(graded.getByText('Estado: Contestada')).toBeVisible();
+  await expect(graded.getByText('Contestada', { exact: true })).toBeVisible();
   await graded.getByRole('button', { name: 'Solicitar reavaliação' }).click();
-  await expect(graded.getByText('Estado: Corrigida')).toBeVisible();
+  await expect(graded.getByText('Corrigida', { exact: true })).toBeVisible();
   await page.goto(attemptUrl);
   await expect(
     page

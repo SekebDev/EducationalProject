@@ -4,12 +4,23 @@ Plataforma individual de estudos com professor de IA, materiais, provas formativ
 
 ## Ambiente de desenvolvimento
 
+Para iniciar o site, a API, o worker, o banco e o e-mail juntos, consulte
+[Rodar tudo com Docker](docs/docker.md). Com seu `.env` configurado:
+
+```powershell
+docker compose --env-file .env -f infra/compose.yaml up -d --build
+```
+
+O site estará em [localhost:3000](http://localhost:3000).
+
+### Desenvolvimento fora dos containers
+
 Requer Node.js 24 LTS (veja `.node-version`), pnpm 10.34.5 e Docker Desktop com containers Linux. As versões e dependências do workspace são fixadas em `package.json` e `pnpm-lock.yaml`.
 
 ```powershell
 Copy-Item -LiteralPath '.env.example' -Destination '.env'
 pnpm install --frozen-lockfile
-docker compose -f infra/compose.yaml up -d
+docker compose -f infra/compose.yaml up -d db smtp
 pnpm db:migrate
 pnpm dev
 ```
@@ -21,6 +32,9 @@ O fluxo inclui cadastro, recuperação de senha, conversas com três personalida
 Os comandos `pnpm format:check`, `pnpm lint`, `pnpm typecheck`, `pnpm test:unit`, `pnpm test:integration`, `pnpm test:contract`, `pnpm test:e2e` e `pnpm build` verificam o código. Configure `TEST_DATABASE_URL` para um banco isolado, por exemplo `study_test`. A suíte E2E inicia API e web nas portas 3101/3100 e usa armazenamento separado. Consulte a [validação](specs/001-ai-study-platform/validation.md), a [operação](docs/operations.md) e as tarefas.
 
 ## Fluxo de desenvolvimento
+
+A [arquitetura do backend](docs/backend-architecture.md) descreve DTOs, entidades,
+validacao HTTP, autenticacao com guards e a organizacao da persistencia.
 
 `main` representa a versão de produção. `dev` é a base de integração do trabalho em andamento. Cada funcionalidade começa em uma branch `feat/<nome>` criada a partir da `dev` atualizada. Após revisão e verificações aplicáveis, a feature é integrada em `dev`. A promoção de `dev` para `main` ocorre somente quando a versão estiver pronta para produção.
 

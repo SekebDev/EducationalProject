@@ -7,7 +7,7 @@ test('resultado inicia prática nova e preserva a prova anterior', async ({
   const email = `practice-${crypto.randomUUID()}@example.invalid`;
   await page.goto('/cadastro');
   await page.getByLabel('E-mail').fill(email);
-  await page.getByLabel('Senha').fill('valid-password-1234');
+  await page.getByLabel('Senha', { exact: true }).fill('valid-password-1234');
   await page.getByRole('button', { name: 'Criar conta' }).click();
   await expect(page).toHaveURL(/\/conversas$/);
   const pool = createPool(process.env.TEST_DATABASE_URL!);

@@ -23,6 +23,8 @@ function contrast(a: string, b: string) {
 test('contraste, axe, foco e largura em cinco fluxos e quatro larguras', async ({
   page,
 }) => {
+  test.setTimeout(120_000);
+  await page.emulateMedia({ reducedMotion: 'reduce' });
   const email = `access-${crypto.randomUUID()}@example.invalid`;
   await page.setViewportSize({ width: 360, height: 800 });
   await page.goto('/entrar');
@@ -48,7 +50,7 @@ test('contraste, axe, foco e largura em cinco fluxos e quatro larguras', async (
   try {
     await page.goto('/cadastro');
     await page.getByLabel('E-mail').fill(email);
-    await page.getByLabel('Senha').fill('valid-password-1234');
+    await page.getByLabel('Senha', { exact: true }).fill('valid-password-1234');
     await page.getByRole('button', { name: 'Criar conta' }).click();
     await expect(page).toHaveURL(/\/conversas$/);
     student = (
@@ -61,6 +63,25 @@ test('contraste, axe, foco e largura em cinco fluxos e quatro larguras', async (
     await page.getByRole('button', { name: 'Começar conversa' }).click();
     await expect(page).toHaveURL(/\/conversas\/[a-f0-9-]+$/);
     const conversationUrl = page.url();
+    await page.getByRole('button', { name: 'Menu', exact: true }).click();
+    const menu = page.getByRole('dialog', { name: 'Menu de navegação' });
+    await expect(menu).toBeVisible();
+    await expect(page.locator('body')).toHaveCSS('overflow', 'hidden');
+    for (let index = 0; index < 14; index++) {
+      await page.keyboard.press('Tab');
+      expect(
+        await menu.evaluate((element) =>
+          element.contains(document.activeElement),
+        ),
+      ).toBe(true);
+    }
+    await page
+      .locator('[data-slot="sheet-overlay"]')
+      .click({ position: { x: 350, y: 400 } });
+    await expect(menu).toBeHidden();
+    await expect(
+      page.getByRole('button', { name: 'Menu', exact: true }),
+    ).toBeFocused();
     for (const width of [360, 768, 1024, 1440]) {
       await page.setViewportSize({ width, height: 900 });
       for (const route of [
@@ -101,14 +122,109 @@ test('contraste, axe, foco e largura em cinco fluxos e quatro larguras', async (
           accessibility.violations,
           `Axe em ${route} a ${width}px: ${accessibility.violations.map((item) => item.id).join(', ')}`,
         ).toEqual([]);
-        if (route === '/evolucao') {
-          await page.screenshot({
-            path: test.info().outputPath(`evolucao-${width}.png`),
-            fullPage: true,
-          });
-        }
+        const screen =
+          route === conversationUrl
+            ? 'conversa'
+            : route.replaceAll('/', '-').replace(/^-/, '');
+        await page.screenshot({
+          path: test.info().outputPath(`${screen}-${width}.png`),
+          fullPage: true,
+        });
       }
     }
+
+    const insightsPath = '**/api/v1/insights';
+    const inspectInsightsState = async (width: number, label: string) => {
+      await page.setViewportSize({ width, height: 900 });
+      const overflow = await page.evaluate(
+        () => document.documentElement.scrollWidth - window.innerWidth,
+      );
+      expect(overflow, `${label} a ${width}px`).toBeLessThanOrEqual(1);
+      let visibleFocus = false;
+      for (let index = 0; index < 12; index++) {
+        await page.keyboard.press('Tab');
+        visibleFocus = await page.evaluate(() => {
+          const element = document.activeElement;
+          return (
+            element !== document.body &&
+            Boolean(element?.matches(':focus-visible')) &&
+            getComputedStyle(element!).outlineStyle !== 'none'
+          );
+        });
+        if (visibleFocus) {
+          break;
+        }
+      }
+      expect(visibleFocus, `Foco visível em ${label} a ${width}px`).toBe(true);
+      const result = await new AxeBuilder({ page })
+        .withTags(['wcag2a', 'wcag2aa', 'wcag21aa'])
+        .analyze();
+      expect(
+        result.violations,
+        `Axe em ${label} a ${width}px: ${result.violations.map((item) => item.id).join(', ')}`,
+      ).toEqual([]);
+    };
+
+    await page.goto('/evolucao');
+    await expect(
+      page.getByText(
+        'Ainda não há respostas válidas para calcular a nota com estes filtros.',
+        { exact: false },
+      ),
+    ).toBeVisible();
+    await expect(
+      page.getByText('Nenhum tema tem respostas válidas com estes filtros.'),
+    ).toBeVisible();
+    for (const width of [360, 768, 1024, 1440]) {
+      await inspectInsightsState(width, 'evolução vazia');
+    }
+
+    await page.route(insightsPath, async (route) => {
+      await route.fulfill({
+        json: {
+          status: 'pending',
+          questionCount: 0,
+          pendingCount: 1,
+          contestedCount: 0,
+          points: null,
+          possiblePoints: null,
+          percentage: null,
+          topics: [],
+          seriesByLevel: [],
+          recommendations: [],
+        },
+      });
+    });
+    await page.goto('/evolucao');
+    await expect(page.getByRole('status')).toContainText(
+      'Há correções pendentes',
+    );
+    for (const width of [360, 768, 1024, 1440]) {
+      await inspectInsightsState(width, 'evolução com correção pendente');
+    }
+    await page.unroute(insightsPath);
+
+    await page.route(insightsPath, async (route) => {
+      await route.fulfill({
+        status: 503,
+        json: {
+          error: {
+            code: 'SERVICE_UNAVAILABLE',
+            message: 'Não foi possível carregar a evolução.',
+            retryable: true,
+            requestId: crypto.randomUUID(),
+          },
+        },
+      });
+    });
+    await page.goto('/evolucao');
+    await expect(page.locator('main [role="alert"]')).toContainText(
+      'Não foi possível carregar a evolução.',
+    );
+    for (const width of [360, 768, 1024, 1440]) {
+      await inspectInsightsState(width, 'erro na evolução');
+    }
+    await page.unroute(insightsPath);
   } finally {
     if (student) {
       await pool.query('DELETE FROM conversation WHERE owner_id=$1', [student]);

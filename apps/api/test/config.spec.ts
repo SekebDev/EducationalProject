@@ -11,6 +11,16 @@ const valid = {
 };
 
 describe('readConfig', () => {
+  it('keeps local development private and permits the Docker bind host', () => {
+    expect(readConfig(valid).apiHost).toBe('127.0.0.1');
+    expect(readConfig({ ...valid, API_HOST: '0.0.0.0' }).apiHost).toBe(
+      '0.0.0.0',
+    );
+    expect(() => readConfig({ ...valid, API_HOST: 'example.com' })).toThrow(
+      'API_HOST',
+    );
+  });
+
   it('rejects fake AI in production without exposing secrets', () => {
     expect(() =>
       readConfig({ ...valid, NODE_ENV: 'production', AI_PROVIDER: 'fake' }),

@@ -7,7 +7,10 @@ import { createPool, transaction } from '../../infrastructure/db/pool.js';
 import { readConfig } from '../../infrastructure/config.js';
 import { PublicError } from '../../infrastructure/http/public-error.js';
 
-type PublicStudent = { id: string; email: string; timezone: string };
+import type {
+  CurrentStudentEntity,
+  StudentEntity,
+} from './entities/student.entity.js';
 
 function hashToken(token: string): string {
   return createHash('sha256').update(token).digest('hex');
@@ -22,13 +25,13 @@ export class AuthService {
     emailInput: string,
     password: string,
     csrfToken: string,
-  ): Promise<{ student: PublicStudent; token: string }> {
+  ): Promise<{ student: CurrentStudentEntity; token: string }> {
     const email = emailInput.trim().toLowerCase();
     const passwordHash = await argon2.hash(password, { type: argon2.argon2id });
     const token = randomBytes(32).toString('base64url');
     try {
       const student = await transaction(this.pool, async (client) => {
-        const registered = await client.query<PublicStudent>(
+        const registered = await client.query<CurrentStudentEntity>(
           'INSERT INTO student (email,password_hash) VALUES ($1,$2) RETURNING id,email,timezone',
           [email, passwordHash],
         );
@@ -56,13 +59,12 @@ export class AuthService {
     emailInput: string,
     password: string,
     csrfToken: string,
-  ): Promise<{ student: PublicStudent; token: string }> {
+  ): Promise<{ student: CurrentStudentEntity; token: string }> {
     const email = emailInput.trim().toLowerCase();
-    const found = await this.pool.query<
-      PublicStudent & { password_hash: string }
-    >('SELECT id,email,timezone,password_hash FROM student WHERE email=$1', [
-      email,
-    ]);
+    const found = await this.pool.query<StudentEntity>(
+      'SELECT id,email,timezone,password_hash FROM student WHERE email=$1',
+      [email],
+    );
     const row = found.rows[0];
     if (!row || !(await argon2.verify(row.password_hash, password))) {
       throw new PublicError(
@@ -79,11 +81,13 @@ export class AuthService {
     };
   }
 
-  async currentStudent(token: string | undefined): Promise<PublicStudent> {
+  async currentStudent(
+    token: string | undefined,
+  ): Promise<CurrentStudentEntity> {
     if (!token) {
       throw new PublicError(401, 'UNAUTHENTICATED', 'Entre para continuar.');
     }
-    const result = await this.pool.query<PublicStudent>(
+    const result = await this.pool.query<CurrentStudentEntity>(
       `SELECT st.id,st.email,st.timezone FROM session s JOIN student st ON st.id=s.student_id
        WHERE s.token_hash=$1 AND s.revoked_at IS NULL AND s.expires_at>now()`,
       [hashToken(token)],

@@ -10,7 +10,7 @@ A aplicação Next.js/NestJS, worker, migrações e testes estão implementados.
 - PostgreSQL 18 com pgvector pelo Compose do projeto, banco de teste separado e caixa SMTP local. Migrações e seed somente sintético, isolado da produção.
 - `.env.example` documenta DATABASE_URL, TEST_DATABASE_URL, APP_ORIGIN, SESSION_SECRET, STORAGE_DRIVER/local path ou S3_BUCKET/REGION, SMTP_HOST/PORT/FROM, AI_PROVIDER=fake|openai, OPENAI_API_KEY, modelos e limites de entrada/saída. Orçamento dos ensaios é configurado nos comandos próprios.
 - Secrets somente em `.env` ignorado/secret manager. Variáveis OpenAI/S3/sessão nunca usam prefixo NEXT_PUBLIC. Falta de configuração obrigatória deve interromper inicialização com diagnóstico sem valor secreto.
-- Modo fake é explicitamente identificado na interface local; produção recusa iniciar com fake. Modelo inicial real `gpt-6-sol` e embeddings `text-embedding-3-small`; validar disponibilidade da conta.
+- Modo fake é explicitamente identificado na interface local; produção recusa iniciar com fake. Modelo inicial real `gpt-4.1-nano` e embeddings `text-embedding-3-small`; validar disponibilidade da conta.
 
 ## Comandos (PowerShell, raiz do repositório)
 

@@ -6,6 +6,11 @@ import Link from 'next/link';
 import type { Exam } from '@study/contracts';
 import { StudyShell } from '../../../features/study/StudyShell';
 import { api, errorMessage } from '../../../lib/api';
+import { Button } from '../../../components/ui/button';
+import { BlurFade } from '../../../components/ui/blur-fade';
+import { Badge } from '../../../components/ui/badge';
+import { LoaderCircle } from 'lucide-react';
+import styles from '../../../features/attempts/practice.module.css';
 
 export default function ExamPage() {
   const params = useParams<{ id: string }>();
@@ -90,7 +95,7 @@ export default function ExamPage() {
 
   return (
     <StudyShell title="Prova">
-      <main className="main-content">
+      <main className={`main-content ${styles.stage}`}>
         <Link className="back-link" href="/provas">
           ← Todas as provas
         </Link>
@@ -102,7 +107,7 @@ export default function ExamPage() {
         ) : null}
         {exam && (
           <>
-            <div className="page-heading">
+            <BlurFade className="page-heading" delay={0.04}>
               <div>
                 <span className="eyebrow">{exam.studyLevel}</span>
                 <h2>{exam.title}</h2>
@@ -114,57 +119,69 @@ export default function ExamPage() {
                   <p>Gerada a partir da conversa “{exam.conversationTitle}”.</p>
                 )}
               </div>
-            </div>
+            </BlurFade>
             {exam.state === 'queued' || exam.state === 'generating' ? (
-              <div className="progress-panel" role="status" aria-live="polite">
-                <span className="eyebrow">Em andamento</span>
-                <h3>
-                  {exam.state === 'queued'
-                    ? 'Sua prova está na fila.'
-                    : 'Estamos preparando as questões.'}
-                </h3>
-                <p>
-                  Esta página será atualizada automaticamente. Você pode voltar
-                  depois.
-                </p>
+              <div role="status" aria-live="polite">
+                <BlurFade className="progress-panel">
+                  <LoaderCircle
+                    className={styles.preparingIcon}
+                    aria-hidden="true"
+                  />
+                  <span className="eyebrow">Em andamento</span>
+                  <h3>
+                    {exam.state === 'queued'
+                      ? 'Sua prova está na fila.'
+                      : 'Estamos preparando as questões.'}
+                  </h3>
+                  <p>
+                    Esta página será atualizada automaticamente. Você pode
+                    voltar depois.
+                  </p>
+                </BlurFade>
               </div>
             ) : exam.state === 'failed' ? (
-              <div className="progress-panel failed" role="alert">
-                <span className="eyebrow">Não foi possível concluir</span>
-                <h3>A geração falhou.</h3>
-                <p>Você pode repetir a geração com a mesma configuração.</p>
-                <button
-                  className="button"
-                  onClick={() => void retry()}
-                  disabled={retrying}
-                >
-                  {retrying ? 'Reiniciando…' : 'Tentar novamente'}
-                </button>{' '}
-                <Link className="button secondary" href="/provas/nova">
-                  Criar nova prova
-                </Link>
+              <div role="alert">
+                <BlurFade className="progress-panel failed">
+                  <span className="eyebrow">Não foi possível concluir</span>
+                  <h3>Não conseguimos preparar sua prova.</h3>
+                  <p>Você pode tentar novamente com as mesmas escolhas.</p>
+                  <Button onClick={() => void retry()} disabled={retrying}>
+                    {retrying ? 'Reiniciando…' : 'Tentar novamente'}
+                  </Button>{' '}
+                  <Button asChild variant="outline">
+                    <Link href="/provas/nova">Criar nova prova</Link>
+                  </Button>
+                </BlurFade>
               </div>
             ) : (
               <div className="question-list">
                 {exam.attemptId && (
-                  <Link
-                    className="button"
-                    href={`/tentativas/${exam.attemptId}`}
-                  >
-                    Responder prova
-                  </Link>
+                  <Button asChild>
+                    <Link href={`/tentativas/${exam.attemptId}`}>
+                      Responder prova <span aria-hidden="true">↗</span>
+                    </Link>
+                  </Button>
                 )}
                 <p className="subtle">
-                  Leia as questões e responda na sua tentativa.
+                  Leia as questões abaixo e responda na página da tentativa.
                 </p>
-                {exam.questions.map((question) => (
-                  <article className="question-preview" key={question.id}>
-                    <span className="eyebrow">
-                      Questão {question.ordinal} · {question.topic} ·{' '}
-                      {question.type === 'objective'
-                        ? 'Objetiva'
-                        : 'Discursiva'}
-                    </span>
+                {exam.questions.map((question, index) => (
+                  <BlurFade
+                    className="question-preview"
+                    delay={Math.min(index * 0.04, 0.28)}
+                    key={question.id}
+                  >
+                    <div className={styles.questionMeta}>
+                      <span className={styles.questionOrdinal}>
+                        Questão {String(question.ordinal).padStart(2, '0')}
+                      </span>
+                      <Badge variant="secondary">{question.topic}</Badge>
+                      <Badge variant="outline">
+                        {question.type === 'objective'
+                          ? 'Objetiva'
+                          : 'Discursiva'}
+                      </Badge>
+                    </div>
                     <h3>{question.statement}</h3>
                     {question.alternatives && (
                       <ol type="A">
@@ -173,17 +190,19 @@ export default function ExamPage() {
                         ))}
                       </ol>
                     )}
-                  </article>
+                  </BlurFade>
                 ))}
               </div>
             )}
-            <button
-              className="button danger small"
-              disabled={deleting}
-              onClick={() => void remove()}
-            >
-              Excluir prova
-            </button>
+            <div className={styles.dangerZone}>
+              <Button
+                variant="destructive"
+                disabled={deleting}
+                onClick={() => void remove()}
+              >
+                Excluir prova
+              </Button>
+            </div>
           </>
         )}
       </main>

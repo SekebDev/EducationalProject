@@ -1,3 +1,8 @@
+import type {
+  AttemptEntity,
+  AnswerEntity,
+  QuestionEntity,
+} from './entities/attempts.entity.js';
 import { Injectable } from '@nestjs/common';
 import type pg from 'pg';
 import { questionPublicSchema } from '@study/contracts';
@@ -5,32 +10,6 @@ import { readConfig } from '../../infrastructure/config.js';
 import { createPool, transaction } from '../../infrastructure/db/pool.js';
 import { PublicError } from '../../infrastructure/http/public-error.js';
 import { OperationRepository } from '../../infrastructure/jobs/operations.js';
-
-type AttemptRow = {
-  id: string;
-  exam_id: string;
-  state: string;
-  version: number;
-  submitted_at: Date | null;
-};
-type AnswerRow = {
-  id: string;
-  question_id: string;
-  draft_value: string | null;
-  draft_version: number;
-  confirmed_value: string | null;
-  confirmed_at: Date | null;
-  state: string;
-};
-type QuestionRow = {
-  id: string;
-  ordinal: number;
-  type: 'objective' | 'essay';
-  statement: string;
-  alternatives: Array<{ id: string; text: string }> | null;
-  topic: string;
-  study_level_snapshot: string;
-};
 
 @Injectable()
 export class AttemptsService {
@@ -40,7 +19,7 @@ export class AttemptsService {
   );
 
   async get(ownerId: string, attemptId: string) {
-    const attempt = await this.pool.query<AttemptRow>(
+    const attempt = await this.pool.query<AttemptEntity>(
       `SELECT a.id,a.exam_id,a.state,a.version,a.submitted_at FROM attempt a
        JOIN exam e ON e.id=a.exam_id AND e.owner_id=a.owner_id
        WHERE a.owner_id=$1 AND a.id=$2 AND a.deleted_at IS NULL AND e.deleted_at IS NULL`,
@@ -50,14 +29,14 @@ export class AttemptsService {
     if (!row) {
       throw new PublicError(404, 'NOT_FOUND', 'Tentativa não encontrada.');
     }
-    const questions = await this.pool.query<QuestionRow>(
+    const questions = await this.pool.query<QuestionEntity>(
       `SELECT q.id,q.ordinal,q.type,q.statement,q.alternatives,t.display_name AS topic,q.study_level_snapshot
        FROM question q JOIN topic t ON t.id=q.topic_id AND t.owner_id=q.owner_id
        WHERE q.owner_id=$1 AND q.exam_id=$2 ORDER BY q.ordinal`,
       [ownerId, row.exam_id],
     );
     const answers = await this.pool.query<
-      AnswerRow & {
+      AnswerEntity & {
         points_units: number | null;
         current_state: string | null;
         criterion_scores: unknown;
@@ -139,7 +118,7 @@ export class AttemptsService {
   }
 
   async list(ownerId: string) {
-    const result = await this.pool.query<AttemptRow & { title: string }>(
+    const result = await this.pool.query<AttemptEntity & { title: string }>(
       `SELECT a.id,a.exam_id,a.state,a.version,a.submitted_at,e.title FROM attempt a
        JOIN exam e ON e.id=a.exam_id AND e.owner_id=a.owner_id
        WHERE a.owner_id=$1 AND a.deleted_at IS NULL AND e.deleted_at IS NULL
@@ -196,11 +175,11 @@ export class AttemptsService {
         );
       }
       const saved = current
-        ? await client.query<AnswerRow>(
+        ? await client.query<AnswerEntity>(
             'UPDATE answer SET draft_value=$3,draft_version=draft_version+1 WHERE owner_id=$1 AND id=$2 RETURNING *',
             [ownerId, current.id, value],
           )
-        : await client.query<AnswerRow>(
+        : await client.query<AnswerEntity>(
             "INSERT INTO answer(owner_id,attempt_id,question_id,draft_value,draft_version,state) VALUES ($1,$2,$3,$4,1,'draft') RETURNING *",
             [ownerId, attemptId, questionId, value],
           );
@@ -274,11 +253,11 @@ export class AttemptsService {
         );
       }
       const answer = current
-        ? await client.query<AnswerRow>(
+        ? await client.query<AnswerEntity>(
             "UPDATE answer SET confirmed_value=$3,confirmed_at=now(),state='confirmed_pending' WHERE owner_id=$1 AND id=$2 RETURNING *",
             [ownerId, current.id, trimmed],
           )
-        : await client.query<AnswerRow>(
+        : await client.query<AnswerEntity>(
             "INSERT INTO answer(owner_id,attempt_id,question_id,confirmed_value,confirmed_at,state) VALUES ($1,$2,$3,$4,now(),'confirmed_pending') RETURNING *",
             [ownerId, attemptId, questionId, trimmed],
           );
@@ -350,7 +329,7 @@ export class AttemptsService {
     ownerId: string,
     attemptId: string,
   ) {
-    const result = await client.query<AttemptRow>(
+    const result = await client.query<AttemptEntity>(
       `SELECT a.id,a.exam_id,a.state,a.version,a.submitted_at FROM attempt a
        JOIN exam e ON e.id=a.exam_id AND e.owner_id=a.owner_id
        WHERE a.owner_id=$1 AND a.id=$2 AND a.deleted_at IS NULL AND e.deleted_at IS NULL FOR UPDATE OF a`,
@@ -363,7 +342,7 @@ export class AttemptsService {
     return attempt;
   }
 
-  private requireInProgress(attempt: AttemptRow) {
+  private requireInProgress(attempt: AttemptEntity) {
     if (attempt.state !== 'in_progress') {
       throw new PublicError(
         409,
@@ -379,7 +358,7 @@ export class AttemptsService {
     examId: string,
     questionId: string,
   ) {
-    const result = await client.query<QuestionRow>(
+    const result = await client.query<QuestionEntity>(
       `SELECT q.id,q.type,q.alternatives FROM question q WHERE q.owner_id=$1 AND q.exam_id=$2 AND q.id=$3`,
       [ownerId, examId, questionId],
     );
@@ -396,7 +375,7 @@ export class AttemptsService {
     attemptId: string,
     questionId: string,
   ) {
-    const result = await client.query<AnswerRow>(
+    const result = await client.query<AnswerEntity>(
       'SELECT * FROM answer WHERE owner_id=$1 AND attempt_id=$2 AND question_id=$3 FOR UPDATE',
       [ownerId, attemptId, questionId],
     );

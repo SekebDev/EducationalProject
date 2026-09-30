@@ -16,29 +16,22 @@ export function chunkSegments(
 ): ExtractedSegment[] {
   const chunks: ExtractedSegment[] = [];
   for (const segment of segments) {
-    const words = segment.text.split(/\s+/u);
-    let current = '';
-    for (const word of words) {
-      if (current && current.length + word.length + 1 > 1_200) {
-        chunks.push({ text: current, locator: segment.locator });
-        current = '';
-      }
-      if (word.length > 1_200) {
-        if (current) {
-          chunks.push({ text: current, locator: segment.locator });
+    let start = 0;
+    while (start < segment.text.length) {
+      let end = Math.min(start + 1_200, segment.text.length);
+      if (end < segment.text.length) {
+        for (let boundary = end - 1; boundary > start; boundary--) {
+          if (/\s/u.test(segment.text[boundary] ?? '')) {
+            end = boundary + 1;
+            break;
+          }
         }
-        for (let start = 0; start < word.length; start += 1_200) {
-          chunks.push({
-            text: word.slice(start, start + 1_200),
-            locator: segment.locator,
-          });
-        }
-      } else {
-        current = current ? `${current} ${word}` : word;
       }
-    }
-    if (current) {
-      chunks.push({ text: current, locator: segment.locator });
+      chunks.push({
+        text: segment.text.slice(start, end),
+        locator: segment.locator,
+      });
+      start = end;
     }
   }
   return chunks;

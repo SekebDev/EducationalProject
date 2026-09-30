@@ -47,7 +47,7 @@ function extractTxt(data: Uint8Array): ExtractedSegment[] {
       .replace(/^\uFEFF/u, '')
       .split(/\r\n|\n|\r/u)
       .map((text, index) => ({
-        text: text.trim(),
+        text,
         locator: { kind: 'line', number: index + 1 },
       })),
   );

@@ -6,6 +6,12 @@ import Link from 'next/link';
 import type { Conversation, Page } from '@study/contracts';
 import { StudyShell } from '../../../features/study/StudyShell';
 import { api, errorMessage } from '../../../lib/api';
+import { Button } from '../../../components/ui/button';
+import { BlurFade } from '../../../components/ui/blur-fade';
+import { Badge } from '../../../components/ui/badge';
+import { NumberTicker } from '../../../components/ui/number-ticker';
+import { ArrowUpRight, Check, Layers3 } from 'lucide-react';
+import styles from '../../../features/attempts/practice.module.css';
 
 type PracticeOrigin = {
   id: string;
@@ -74,7 +80,7 @@ export default function NewExamPage() {
     }
     if (topicNames.length === 0 || topicNames.length > total) {
       setError(
-        'Informe de 1 até o número de questões em temas, separados por vírgula.',
+        'Informe pelo menos 1 tema, sem ultrapassar o número de questões. Separe os temas por vírgula.',
       );
       return;
     }
@@ -100,7 +106,9 @@ export default function NewExamPage() {
       objectiveCount < 0 ||
       essayCount < 0
     ) {
-      setError('Use de 10 a 30 questões e uma divisão válida entre os tipos.');
+      setError(
+        'Escolha de 10 a 30 questões e distribua esse total entre objetivas e discursivas.',
+      );
       return;
     }
     setError('');
@@ -142,12 +150,15 @@ export default function NewExamPage() {
 
   return (
     <StudyShell title="Nova prova">
-      <main className="main-content form-page">
-        <div className="page-heading">
+      <main className={`main-content form-page ${styles.stage}`}>
+        <BlurFade className="page-heading" delay={0.04}>
           <div>
-            <span className="eyebrow">Prática formativa</span>
+            <span className={styles.tagline}>Seu próximo desafio</span>
             <h2>Monte sua prova</h2>
-            <p>Parta de uma conversa e transforme suas dúvidas em prática.</p>
+            <p>
+              Escolha o que estudar, ajuste a combinação de questões e crie uma
+              prática feita para você.
+            </p>
             {recommendation && (
               <p role="status">
                 Nova prática a partir de uma recomendação. As questões serão
@@ -155,115 +166,163 @@ export default function NewExamPage() {
               </p>
             )}
           </div>
-        </div>
-        <form onSubmit={(event) => void submit(event)} className="exam-form">
-          <div className="form-section">
-            <span className="form-step">01 / CONVERSA</span>
-            <div className="field">
-              <label htmlFor="exam-conversation">Conversa de origem</label>
-              <select
-                id="exam-conversation"
-                value={conversationId}
-                onChange={(event) => setConversationId(event.target.value)}
-                disabled={Boolean(recommendation)}
-                required
-              >
-                {conversations.length === 0 && (
-                  <option value="">Nenhuma conversa disponível</option>
-                )}
-                {conversations.map((item) => (
-                  <option value={item.id} key={item.id}>
-                    {item.title}
-                  </option>
-                ))}
-              </select>
-              <span className="hint">
-                As últimas mensagens concluídas dessa conversa orientam a
-                geração.
-              </span>
-            </div>
-            {conversations.length === 0 && (
-              <Link href="/conversas/nova">Começar uma conversa primeiro</Link>
+        </BlurFade>
+        <div className={styles.builderLayout}>
+          <form onSubmit={(event) => void submit(event)} className="exam-form">
+            <BlurFade className="form-section" delay={0.1}>
+              <span className="form-step">01 / CONVERSA</span>
+              <div className={styles.stepHeader}>
+                <h3>De onde vamos partir</h3>
+              </div>
+              <div className="field">
+                <label htmlFor="exam-conversation">Conversa de origem</label>
+                <select
+                  id="exam-conversation"
+                  value={conversationId}
+                  onChange={(event) => setConversationId(event.target.value)}
+                  disabled={Boolean(recommendation)}
+                  required
+                >
+                  {conversations.length === 0 && (
+                    <option value="">Nenhuma conversa disponível</option>
+                  )}
+                  {conversations.map((item) => (
+                    <option value={item.id} key={item.id}>
+                      {item.title}
+                    </option>
+                  ))}
+                </select>
+                <span className="hint">
+                  As últimas mensagens concluídas dessa conversa ajudam a
+                  preparar as questões.
+                </span>
+              </div>
+              {conversations.length === 0 && (
+                <Link href="/conversas/nova">
+                  Começar uma conversa primeiro
+                </Link>
+              )}
+            </BlurFade>
+            <BlurFade className="form-section" delay={0.16}>
+              <span className="form-step">02 / ASSUNTOS</span>
+              <div className={styles.stepHeader}>
+                <h3>O que você quer praticar</h3>
+              </div>
+              <div className="field">
+                <label htmlFor="exam-topics">Temas separados por vírgula</label>
+                <input
+                  id="exam-topics"
+                  value={topics}
+                  onChange={(event) => setTopics(event.target.value)}
+                  maxLength={1000}
+                  placeholder="Ex.: Ecologia, Genética"
+                  required
+                />
+                <span className="hint">
+                  Cada tema recebe pelo menos uma questão.
+                </span>
+              </div>
+              <div className="field">
+                <label htmlFor="exam-level">Nível de estudo</label>
+                <input
+                  id="exam-level"
+                  value={studyLevel}
+                  onChange={(event) => setStudyLevel(event.target.value)}
+                  maxLength={200}
+                  required
+                />
+              </div>
+            </BlurFade>
+            <BlurFade className="form-section" delay={0.22}>
+              <span className="form-step">03 / QUESTÕES</span>
+              <div className={styles.stepHeader}>
+                <h3>O ritmo da sua prova</h3>
+              </div>
+              <div className="exam-counts">
+                <div className="field">
+                  <label htmlFor="exam-total">Total</label>
+                  <input
+                    id="exam-total"
+                    type="number"
+                    min={10}
+                    max={30}
+                    step={1}
+                    value={total}
+                    onChange={(event) => setTotal(Number(event.target.value))}
+                    required
+                  />
+                </div>
+                <div className="field">
+                  <label htmlFor="exam-objective">Objetivas</label>
+                  <input
+                    id="exam-objective"
+                    type="number"
+                    min={0}
+                    max={total}
+                    step={1}
+                    value={objectiveCount}
+                    onChange={(event) =>
+                      setObjectiveCount(Number(event.target.value))
+                    }
+                    required
+                  />
+                </div>
+                <div className="count-result" aria-live="polite">
+                  <span>Discursivas</span>
+                  <strong>{essayCount >= 0 ? essayCount : '—'}</strong>
+                </div>
+              </div>
+            </BlurFade>
+            {error && (
+              <p className="form-error" role="alert">
+                {error}
+              </p>
             )}
-          </div>
-          <div className="form-section">
-            <span className="form-step">02 / ASSUNTOS</span>
-            <div className="field">
-              <label htmlFor="exam-topics">Temas separados por vírgula</label>
-              <input
-                id="exam-topics"
-                value={topics}
-                onChange={(event) => setTopics(event.target.value)}
-                maxLength={1000}
-                placeholder="Ex.: Ecologia, Genética"
-                required
-              />
-              <span className="hint">
-                Cada tema recebe pelo menos uma questão.
-              </span>
+            <div className="form-actions">
+              <Button type="submit" disabled={pending}>
+                {pending ? 'Criando prova…' : 'Gerar prova'}{' '}
+                <ArrowUpRight aria-hidden="true" />
+              </Button>
+              <Button asChild variant="ghost">
+                <Link href="/provas">Voltar</Link>
+              </Button>
             </div>
-            <div className="field">
-              <label htmlFor="exam-level">Nível de estudo</label>
-              <input
-                id="exam-level"
-                value={studyLevel}
-                onChange={(event) => setStudyLevel(event.target.value)}
-                maxLength={200}
-                required
-              />
+          </form>
+          <BlurFade className={styles.builderAside} delay={0.18}>
+            <div className={styles.asideIcon}>
+              <Layers3 aria-hidden="true" />
             </div>
-          </div>
-          <div className="form-section">
-            <span className="form-step">03 / QUESTÕES</span>
-            <div className="exam-counts">
-              <div className="field">
-                <label htmlFor="exam-total">Total</label>
-                <input
-                  id="exam-total"
-                  type="number"
-                  min={10}
-                  max={30}
-                  step={1}
-                  value={total}
-                  onChange={(event) => setTotal(Number(event.target.value))}
-                  required
-                />
-              </div>
-              <div className="field">
-                <label htmlFor="exam-objective">Objetivas</label>
-                <input
-                  id="exam-objective"
-                  type="number"
-                  min={0}
-                  max={total}
-                  step={1}
-                  value={objectiveCount}
-                  onChange={(event) =>
-                    setObjectiveCount(Number(event.target.value))
-                  }
-                  required
-                />
-              </div>
-              <div className="count-result" aria-live="polite">
-                <span>Discursivas</span>
-                <strong>{essayCount >= 0 ? essayCount : '—'}</strong>
-              </div>
-            </div>
-          </div>
-          {error && (
-            <p className="form-error" role="alert">
-              {error}
+            <span className={styles.tagline}>Feita para você</span>
+            <h3>Uma boa prática começa com uma boa escolha.</h3>
+            <p>
+              Seu material de estudo se transforma em questões para você pensar,
+              responder e aprender.
             </p>
-          )}
-          <div className="form-actions">
-            <button className="button" type="submit" disabled={pending}>
-              {pending ? 'Criando prova…' : 'Gerar prova'}
-            </button>
-            <Link className="button ghost" href="/provas">
-              Voltar
-            </Link>
-          </div>
-        </form>
+            <div className={styles.builderCount}>
+              <NumberTicker
+                value={Number.isFinite(total) ? Math.max(0, total) : 0}
+              />
+              <span>questões no seu ritmo</span>
+            </div>
+            <div className={styles.builderTags}>
+              <Badge variant="outline">{objectiveCount} objetivas</Badge>
+              <Badge variant="outline">
+                {Math.max(0, essayCount)} discursivas
+              </Badge>
+            </div>
+            <ul className={styles.builderChecklist}>
+              <li>
+                <Check aria-hidden="true" /> Temas escolhidos por você
+              </li>
+              <li>
+                <Check aria-hidden="true" /> Correção com explicações
+              </li>
+              <li>
+                <Check aria-hidden="true" /> Acompanhe sua evolução
+              </li>
+            </ul>
+          </BlurFade>
+        </div>
       </main>
     </StudyShell>
   );
