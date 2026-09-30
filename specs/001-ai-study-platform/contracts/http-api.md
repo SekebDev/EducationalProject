@@ -52,7 +52,7 @@ Message pública: `{id,sequence,role,content,state,personality,references:[{mate
 
 | Método e rota | Entrada / comportamento | Resultado |
 |---|---|---|
-| POST /exams | topicNames[], studyLevel, total, objectiveCount, essayCount, materialIds[], originRecommendationId? | 202 `{examId,operationId}`; valida antes de gerar |
+| POST /exams | conversationId, topicNames[], studyLevel, total, objectiveCount, essayCount, materialIds[], originRecommendationId? | 202 `{examId,operationId}`; valida conversa do dono com pergunta concluída, cria snapshot limitado do histórico e valida antes de gerar |
 | GET /exams | cursor | lista, estado, tentativa única |
 | GET /exams/:id | — | prova e QuestionPublic[] quando ready; operationId quando pendente |
 | DELETE /exams/:id | confirmação | 204; exclui acesso à prova/tentativa e recalcula indicadores |
