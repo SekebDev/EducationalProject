@@ -118,7 +118,12 @@ export type StudyAdvance = z.infer<typeof studyAdvanceSchema>;
 export type StudyLessonStep = z.infer<typeof studyLessonStepSchema>;
 export type StudyLesson = z.infer<typeof studyLessonSchema>;
 export type StudyBlock = StudyRect & { id: string; text: string };
-export type StudyLine = { id: string; text: string; rects: StudyRect[]; blockIds: string[] };
+export type StudyLine = {
+  id: string;
+  text: string;
+  rects: StudyRect[];
+  blockIds: string[];
+};
 export type StudyTurn = {
   id: string;
   role: 'user' | 'assistant';
@@ -205,12 +210,20 @@ export function validateStudyState(
   state: StudyEditorState,
   originals: StudyPage[],
 ): string | null {
-  if (state.lessons?.some((lesson) => lesson.currentStepIndex >= lesson.steps.length ||
-    !state.pages.some((page) => page.id === lesson.pageId) ||
-    lesson.steps.some((step) => step.pageId !== lesson.pageId))) {
+  if (
+    state.lessons?.some(
+      (lesson) =>
+        lesson.currentStepIndex >= lesson.steps.length ||
+        !state.pages.some((page) => page.id === lesson.pageId) ||
+        lesson.steps.some((step) => step.pageId !== lesson.pageId),
+    )
+  ) {
     return 'Etapa de estudo inválida.';
   }
-  if (state.activeLessonId && !state.lessons?.some((lesson) => lesson.id === state.activeLessonId)) {
+  if (
+    state.activeLessonId &&
+    !state.lessons?.some((lesson) => lesson.id === state.activeLessonId)
+  ) {
     return 'Aula de estudo não encontrada.';
   }
   const ids = new Set(state.pages.map((page) => page.id));
@@ -276,10 +289,18 @@ export function visibleStudyState(state: StudyEditorState): StudyEditorState {
   }
   // Never hide a page containing a student edit or a previously revealed drawing.
   for (const annotation of state.annotations) {
-    if (!hiddenAnnotations.has(annotation.id)) hiddenPages.delete(annotation.pageId);
+    if (!hiddenAnnotations.has(annotation.id))
+      hiddenPages.delete(annotation.pageId);
   }
-  return { ...state, pages: state.pages.filter((page) => !hiddenPages.has(page.id)),
-    annotations: state.annotations.filter((annotation) => !hiddenAnnotations.has(annotation.id) && !hiddenPages.has(annotation.pageId)) };
+  return {
+    ...state,
+    pages: state.pages.filter((page) => !hiddenPages.has(page.id)),
+    annotations: state.annotations.filter(
+      (annotation) =>
+        !hiddenAnnotations.has(annotation.id) &&
+        !hiddenPages.has(annotation.pageId),
+    ),
+  };
 }
 
 function annotationExceedsPage(item: StudyAnnotation, page: StudyPage) {

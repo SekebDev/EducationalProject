@@ -28,25 +28,40 @@ function accountEpoch(): string {
       if (event.key === accountEpochKey) {
         csrfToken = null;
         // Reload clears private component state and cancels streams in other tabs.
-        if (!['/entrar', '/cadastro', '/recuperar-senha', '/'].includes(window.location.pathname)) {
+        if (
+          !['/entrar', '/cadastro', '/recuperar-senha', '/'].includes(
+            window.location.pathname,
+          )
+        ) {
           window.location.replace('/entrar?expired=1');
         }
       }
     });
   }
-  try { return window.localStorage.getItem(accountEpochKey) ?? memoryEpoch; }
-  catch { return memoryEpoch; }
+  try {
+    return window.localStorage.getItem(accountEpochKey) ?? memoryEpoch;
+  } catch {
+    return memoryEpoch;
+  }
 }
 
 function invalidateAccount(): void {
   memoryEpoch = crypto.randomUUID();
   csrfToken = null;
-  try { window.localStorage.setItem(accountEpochKey, memoryEpoch); } catch { /* Storage can be unavailable. */ }
+  try {
+    window.localStorage.setItem(accountEpochKey, memoryEpoch);
+  } catch {
+    /* Storage can be unavailable. */
+  }
 }
 
 function assertAccount(epoch: string): void {
   if (accountEpoch() !== epoch) {
-    throw new RequestError(401, 'ACCOUNT_CHANGED', 'A conta mudou. Entre novamente para continuar.');
+    throw new RequestError(
+      401,
+      'ACCOUNT_CHANGED',
+      'A conta mudou. Entre novamente para continuar.',
+    );
   }
 }
 
@@ -118,9 +133,14 @@ export async function api<T>(
   } = {},
 ): Promise<T> {
   const method = options.method ?? 'GET';
-  const changesAccount = method === 'POST' && [
-    '/auth/login', '/auth/register', '/auth/logout', '/auth/password-reset/confirm',
-  ].includes(path);
+  const changesAccount =
+    method === 'POST' &&
+    [
+      '/auth/login',
+      '/auth/register',
+      '/auth/logout',
+      '/auth/password-reset/confirm',
+    ].includes(path);
   if (changesAccount) invalidateAccount();
   const epoch = accountEpoch();
   const headers = new Headers();
@@ -197,7 +217,8 @@ export function errorMessage(error: unknown): string {
 export async function apiBlob(path: string): Promise<Blob> {
   const epoch = accountEpoch();
   const response = await fetch(`/api/v1${path}`, {
-    credentials: 'same-origin', cache: 'no-store',
+    credentials: 'same-origin',
+    cache: 'no-store',
   });
   assertAccount(epoch);
   if (!response.ok) throw await responseError(response);

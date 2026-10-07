@@ -352,11 +352,14 @@ export class OpenAiProvider implements AiProvider {
         maxOutputTokens: 0,
       });
       signal?.throwIfAborted();
-      const result = await this.client.embeddings.create({
-        model,
-        input: texts,
-        dimensions: 1536,
-      }, { ...(signal ? { signal } : {}) });
+      const result = await this.client.embeddings.create(
+        {
+          model,
+          input: texts,
+          dimensions: 1536,
+        },
+        { ...(signal ? { signal } : {}) },
+      );
       await accounting?.receivedResponse({
         model: result.model,
         schema: 'embedding-v1',

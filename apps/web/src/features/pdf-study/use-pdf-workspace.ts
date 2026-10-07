@@ -44,23 +44,21 @@ export function usePdfWorkspace(
   const reduced = systemReduced || reduceMotion;
   const completions = useRef(0);
   const completionRefresh = useRef<Promise<void>>(Promise.resolve());
-  const finished = useCallback(
-    () => {
-      completions.current += 1;
-      completionRefresh.current = Promise.resolve(onCompleted?.()).catch(
-        (cause: unknown) => {
-          setNotice(errorMessage(cause));
-        },
-      );
-    },
-    [onCompleted],
-  );
+  const finished = useCallback(() => {
+    completions.current += 1;
+    completionRefresh.current = Promise.resolve(onCompleted?.()).catch(
+      (cause: unknown) => {
+        setNotice(errorMessage(cause));
+      },
+    );
+  }, [onCompleted]);
   const project = useStudyProject(materialId, finished);
   const { study, state } = project;
   const visibleState = state ? visibleStudyState(state) : null;
   const animation = useTutorAnimation(reduced, showMascot, setPageId, state);
   const page =
-    visibleState?.pages.find((item) => item.id === pageId) ?? visibleState?.pages[0];
+    visibleState?.pages.find((item) => item.id === pageId) ??
+    visibleState?.pages[0];
   const index = Math.max(
     0,
     visibleState?.pages.findIndex((item) => item.id === page?.id) ?? 0,
@@ -218,9 +216,16 @@ export function usePdfWorkspace(
     await project.ask({
       question,
       pageId: currentStep?.pageId ?? page.id,
-      selection: currentStep ? { text: currentStep.text, rects: currentStep.rects } : selection,
-      image: currentStep && currentStep.pageId !== page.id ? null : context.current.image,
-      ...(currentStep && animation.lesson ? { lessonId: animation.lesson.id, stepId: currentStep.id } : {}),
+      selection: currentStep
+        ? { text: currentStep.text, rects: currentStep.rects }
+        : selection,
+      image:
+        currentStep && currentStep.pageId !== page.id
+          ? null
+          : context.current.image,
+      ...(currentStep && animation.lesson
+        ? { lessonId: animation.lesson.id, stepId: currentStep.id }
+        : {}),
     });
     await completionRefresh.current;
     return completions.current > before;

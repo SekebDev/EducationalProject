@@ -447,15 +447,18 @@ export function useStudyProject(
       if (!(await flush()) || !owns(operation) || !session.server) {
         return;
       }
-      const saved = await api<PdfStudy>(`/materials/${materialId}/study/lesson/advance`, {
-        method: 'POST',
-        body: {
-          operationId: crypto.randomUUID(),
-          baseRevision: session.server.revision,
-          lessonId,
-          stepId,
+      const saved = await api<PdfStudy>(
+        `/materials/${materialId}/study/lesson/advance`,
+        {
+          method: 'POST',
+          body: {
+            operationId: crypto.randomUUID(),
+            baseRevision: session.server.revision,
+            lessonId,
+            stepId,
+          },
         },
-      });
+      );
       if (owns(operation)) {
         accept(saved, operation.generation);
         setStatus('Salvo');

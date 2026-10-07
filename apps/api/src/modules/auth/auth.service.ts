@@ -81,7 +81,11 @@ export class AuthService {
         [row.id],
       );
       if (current.rows[0]?.password_hash !== row.password_hash) {
-        throw new PublicError(401, 'INVALID_CREDENTIALS', 'E-mail ou senha inválidos.');
+        throw new PublicError(
+          401,
+          'INVALID_CREDENTIALS',
+          'E-mail ou senha inválidos.',
+        );
       }
       await this.insertSession(client, row.id, token, csrfToken);
     });
@@ -132,7 +136,10 @@ export class AuthService {
     const token = randomBytes(32).toString('base64url');
     await transaction(this.pool, async (client) => {
       await client.query('SELECT id FROM student WHERE id=$1 FOR UPDATE', [id]);
-      await client.query('UPDATE password_reset SET used_at=now() WHERE student_id=$1 AND used_at IS NULL', [id]);
+      await client.query(
+        'UPDATE password_reset SET used_at=now() WHERE student_id=$1 AND used_at IS NULL',
+        [id],
+      );
       await client.query(
         "INSERT INTO password_reset(student_id,token_hash,expires_at) VALUES ($1,$2,now()+interval '15 minutes')",
         [id, hashToken(token)],
@@ -159,13 +166,20 @@ export class AuthService {
     });
     await transaction(this.pool, async (client) => {
       const owner = await client.query<{ student_id: string }>(
-        'SELECT student_id FROM password_reset WHERE token_hash=$1', [hashToken(token)],
+        'SELECT student_id FROM password_reset WHERE token_hash=$1',
+        [hashToken(token)],
       );
       if (!owner.rows[0]) {
-        throw new PublicError(422, 'RESET_INVALID', 'Link inválido ou expirado.');
+        throw new PublicError(
+          422,
+          'RESET_INVALID',
+          'Link inválido ou expirado.',
+        );
       }
       // Use the same lock order for issuing links, consuming links and creating sessions.
-      await client.query('SELECT id FROM student WHERE id=$1 FOR UPDATE', [owner.rows[0].student_id]);
+      await client.query('SELECT id FROM student WHERE id=$1 FOR UPDATE', [
+        owner.rows[0].student_id,
+      ]);
       const result = await client.query<{ id: string; student_id: string }>(
         'SELECT id,student_id FROM password_reset WHERE token_hash=$1 AND used_at IS NULL AND expires_at>now() FOR UPDATE',
         [hashToken(token)],

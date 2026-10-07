@@ -24,7 +24,8 @@ const maxTextCharacters = 2_000_000;
 const maxSegments = 10_000;
 
 function ensureContent(segments: ExtractedSegment[]): ExtractedSegment[] {
-  if (segments.length > maxSegments) throw new ExtractionError('MATERIAL_SEGMENT_LIMIT');
+  if (segments.length > maxSegments)
+    throw new ExtractionError('MATERIAL_SEGMENT_LIMIT');
   const content = segments.filter((segment) => segment.text.trim());
   if (content.length === 0) {
     throw new ExtractionError('MATERIAL_NO_TEXT');
@@ -45,15 +46,16 @@ function extractTxt(data: Uint8Array): ExtractedSegment[] {
   } catch {
     throw new ExtractionError('MATERIAL_INVALID_UTF8');
   }
-  if (decoded.length > maxTextCharacters) throw new ExtractionError('MATERIAL_TEXT_TOO_LARGE');
+  if (decoded.length > maxTextCharacters)
+    throw new ExtractionError('MATERIAL_TEXT_TOO_LARGE');
   const lines = decoded.replace(/^\uFEFF/u, '').split(/\r\n|\n|\r/u);
-  if (lines.length > maxSegments) throw new ExtractionError('MATERIAL_SEGMENT_LIMIT');
+  if (lines.length > maxSegments)
+    throw new ExtractionError('MATERIAL_SEGMENT_LIMIT');
   return ensureContent(
-    lines
-      .map((text, index) => ({
-        text,
-        locator: { kind: 'line', number: index + 1 },
-      })),
+    lines.map((text, index) => ({
+      text,
+      locator: { kind: 'line', number: index + 1 },
+    })),
   );
 }
 
@@ -83,14 +85,19 @@ async function extractPdf(data: Uint8Array): Promise<ExtractedSegment[]> {
   });
   try {
     const document = await task.promise;
-    if (document.numPages > 200) throw new ExtractionError('MATERIAL_PAGE_LIMIT');
+    if (document.numPages > 200)
+      throw new ExtractionError('MATERIAL_PAGE_LIMIT');
     const segments: ExtractedSegment[] = [];
     let characters = 0;
     for (let pageNumber = 1; pageNumber <= document.numPages; pageNumber++) {
       const page = await document.getPage(pageNumber);
       const content = await page.getTextContent();
-      characters += content.items.reduce((sum, item) => sum + ('str' in item ? item.str.length : 0), 0);
-      if (characters > maxTextCharacters) throw new ExtractionError('MATERIAL_TEXT_TOO_LARGE');
+      characters += content.items.reduce(
+        (sum, item) => sum + ('str' in item ? item.str.length : 0),
+        0,
+      );
+      if (characters > maxTextCharacters)
+        throw new ExtractionError('MATERIAL_TEXT_TOO_LARGE');
       const text = content.items
         .map((item) => ('str' in item ? item.str : ''))
         .filter(Boolean)

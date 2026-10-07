@@ -7,9 +7,16 @@ const environmentSchema = z
       .default('development'),
     API_PORT: z.coerce.number().int().min(1).max(65535).default(3001),
     API_HOST: z.enum(['127.0.0.1', '0.0.0.0']).optional(),
-    TRUSTED_PROXY_IPS: z.string().default('').transform((value) =>
-      value.split(',').map((item) => item.trim()).filter(Boolean),
-    ).pipe(z.array(z.union([z.ipv4(), z.ipv6()]))),
+    TRUSTED_PROXY_IPS: z
+      .string()
+      .default('')
+      .transform((value) =>
+        value
+          .split(',')
+          .map((item) => item.trim())
+          .filter(Boolean),
+      )
+      .pipe(z.array(z.union([z.ipv4(), z.ipv6()]))),
     DATABASE_URL: z.url().startsWith('postgres://'),
     APP_ORIGIN: z.url(),
     APP_ADDITIONAL_ORIGINS: z

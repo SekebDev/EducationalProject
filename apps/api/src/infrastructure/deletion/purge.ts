@@ -30,30 +30,30 @@ export class DeletionPurger {
     for (let index = 0; index < 500 && Date.now() < deadline; index++) {
       let selected: string | undefined;
       try {
-      const processed = await transaction(this.pool, async (client) => {
-        const due = await client.query<RecordRow>(
-          `SELECT resource_type,resource_id,owner_id FROM deletion_record
+        const processed = await transaction(this.pool, async (client) => {
+          const due = await client.query<RecordRow>(
+            `SELECT resource_type,resource_id,owner_id FROM deletion_record
            WHERE purge_state='pending' AND deleted_at <= now()-($1::double precision * interval '1 hour')
            AND (resource_type || ':' || resource_id::text) <> ALL($2::text[])
            ORDER BY deleted_at,resource_id LIMIT 1 FOR UPDATE SKIP LOCKED`,
-          [hours, failed],
-        );
-        const row = due.rows[0];
-        if (!row) {
-          return false;
+            [hours, failed],
+          );
+          const row = due.rows[0];
+          if (!row) {
+            return false;
+          }
+          selected = `${row.resource_type}:${row.resource_id}`;
+          await this.purgeRecord(client, row);
+          await client.query(
+            "UPDATE deletion_record SET purge_state='purged',purged_at=now() WHERE resource_type=$1 AND resource_id=$2",
+            [row.resource_type, row.resource_id],
+          );
+          return true;
+        });
+        if (!processed) {
+          break;
         }
-        selected = `${row.resource_type}:${row.resource_id}`;
-        await this.purgeRecord(client, row);
-        await client.query(
-          "UPDATE deletion_record SET purge_state='purged',purged_at=now() WHERE resource_type=$1 AND resource_id=$2",
-          [row.resource_type, row.resource_id],
-        );
-        return true;
-      });
-      if (!processed) {
-        break;
-      }
-      purged++;
+        purged++;
       } catch (error) {
         if (!selected) throw error;
         failed.push(selected);
@@ -76,7 +76,9 @@ export class DeletionPurger {
   }
 
   async pruneTutorAttempts(): Promise<void> {
-    await this.pool.query("DELETE FROM pdf_tutor_attempt WHERE created_at <= now()-interval '24 hours'");
+    await this.pool.query(
+      "DELETE FROM pdf_tutor_attempt WHERE created_at <= now()-interval '24 hours'",
+    );
   }
 
   async close() {
@@ -177,9 +179,19 @@ export class DeletionPurger {
         [ownerId, id],
       );
       for (const material of remaining.rows) {
-        await client.query('UPDATE material SET deleted_at=coalesce(deleted_at,now()) WHERE owner_id=$1 AND id=$2', [ownerId, material.id]);
-        await this.purgeRecord(client, { owner_id: ownerId, resource_type: 'material', resource_id: material.id });
-        await client.query("UPDATE deletion_record SET purge_state='purged',purged_at=now() WHERE resource_type='material' AND resource_id=$1", [material.id]);
+        await client.query(
+          'UPDATE material SET deleted_at=coalesce(deleted_at,now()) WHERE owner_id=$1 AND id=$2',
+          [ownerId, material.id],
+        );
+        await this.purgeRecord(client, {
+          owner_id: ownerId,
+          resource_type: 'material',
+          resource_id: material.id,
+        });
+        await client.query(
+          "UPDATE deletion_record SET purge_state='purged',purged_at=now() WHERE resource_type='material' AND resource_id=$1",
+          [material.id],
+        );
       }
       await client.query(
         'UPDATE exam SET conversation_id=NULL,context_snapshot=NULL WHERE owner_id=$1 AND conversation_id=$2',

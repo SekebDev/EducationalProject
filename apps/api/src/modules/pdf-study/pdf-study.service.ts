@@ -192,7 +192,11 @@ export class PdfStudyService implements OnModuleDestroy {
       );
     }
     if (previous.rows[0].response === null) {
-      throw new PublicError(409, 'OPERATION_EXPIRED', 'Esta operação é antiga. Reabra a versão atual do caderno.');
+      throw new PublicError(
+        409,
+        'OPERATION_EXPIRED',
+        'Esta operação é antiga. Reabra a versão atual do caderno.',
+      );
     }
     return previous.rows[0].response;
   }

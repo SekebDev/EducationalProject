@@ -10,7 +10,9 @@ export function useTutorAnimation(
   jump: (id: string) => void,
   state: StudyEditorState | null,
 ) {
-  const lesson = state?.lessons?.find((item) => item.id === state.activeLessonId && !item.completed);
+  const lesson = state?.lessons?.find(
+    (item) => item.id === state.activeLessonId && !item.completed,
+  );
   const step = lesson?.steps[lesson.currentStepIndex];
   const [pose, setPose] = useState<PdfMascotState>('idle');
   const jumpRef = useRef(jump);

@@ -1,5 +1,8 @@
 export function safeReturnTo(requested: string | null, origin: string): string {
-  if (!requested?.startsWith('/') || /[\\\u0000-\u0020\u007f]/u.test(requested)) {
+  if (
+    !requested?.startsWith('/') ||
+    /[\\\u0000-\u0020\u007f]/u.test(requested)
+  ) {
     return '/conversas';
   }
   try {

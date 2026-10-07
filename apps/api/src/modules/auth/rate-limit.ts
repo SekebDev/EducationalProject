@@ -14,7 +14,12 @@ export class AuthRateLimit {
       if (attempt.expiresAt <= now) this.attempts.delete(key);
     }
     if (this.attempts.size >= 20_000) {
-      throw new PublicError(429, 'RATE_LIMITED', 'Aguarde antes de tentar novamente.', true);
+      throw new PublicError(
+        429,
+        'RATE_LIMITED',
+        'Aguarde antes de tentar novamente.',
+        true,
+      );
     }
     for (const [key, limit] of [
       [`${kind}:ip:${ip}`, 100],
@@ -32,7 +37,10 @@ export class AuthRateLimit {
       }
       this.attempts.set(key, {
         count: count + 1,
-        expiresAt: existing && existing.expiresAt > now ? existing.expiresAt : now + 15 * 60_000,
+        expiresAt:
+          existing && existing.expiresAt > now
+            ? existing.expiresAt
+            : now + 15 * 60_000,
       });
     }
   }

@@ -15,12 +15,21 @@ async function main(): Promise<void> {
     bodyParser: true,
   });
   app.useBodyParser('json', { limit: '2mb' });
-  app.set('trust proxy', config.trustedProxyIps?.length ? config.trustedProxyIps : false);
-  app.use((_request: unknown, response: import('express').Response, next: () => void) => {
-    response.setHeader('Cache-Control', 'no-store');
-    response.setHeader('Referrer-Policy', 'no-referrer');
-    next();
-  });
+  app.set(
+    'trust proxy',
+    config.trustedProxyIps?.length ? config.trustedProxyIps : false,
+  );
+  app.use(
+    (
+      _request: unknown,
+      response: import('express').Response,
+      next: () => void,
+    ) => {
+      response.setHeader('Cache-Control', 'no-store');
+      response.setHeader('Referrer-Policy', 'no-referrer');
+      next();
+    },
+  );
   app.use(requestLogging);
   app.use(csrfProtection(config.appOrigin, config.additionalAppOrigins));
   app.useGlobalFilters(new PublicErrorFilter());

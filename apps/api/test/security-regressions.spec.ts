@@ -33,31 +33,64 @@ function archive(value: string, declaredSize?: number) {
 }
 
 describe('security regression boundaries', () => {
-  it.each(['//example.invalid', '/\\example.invalid', '/\texample.invalid', 'https://example.invalid'])('rejects external or ambiguous returnTo %j', (path) => {
-    expect(safeReturnTo(path, 'https://study.example.invalid')).toBe('/conversas');
+  it.each([
+    '//example.invalid',
+    '/\\example.invalid',
+    '/\texample.invalid',
+    'https://example.invalid',
+  ])('rejects external or ambiguous returnTo %j', (path) => {
+    expect(safeReturnTo(path, 'https://study.example.invalid')).toBe(
+      '/conversas',
+    );
   });
   it('keeps internal paths and query strings', () => {
-    expect(safeReturnTo('/conversas/123?tab=pdf#page', 'https://study.example.invalid')).toBe('/conversas/123?tab=pdf#page');
+    expect(
+      safeReturnTo(
+        '/conversas/123?tab=pdf#page',
+        'https://study.example.invalid',
+      ),
+    ).toBe('/conversas/123?tab=pdf#page');
   });
   it('checks real DOCX expansion and rejects false ZIP size claims', () => {
-    expect(() => validateDocxArchive(archive('<document>ok</document>'))).not.toThrow();
-    expect(() => validateDocxArchive(archive('x'.repeat(100_000), 1))).toThrow();
+    expect(() =>
+      validateDocxArchive(archive('<document>ok</document>')),
+    ).not.toThrow();
+    expect(() =>
+      validateDocxArchive(archive('x'.repeat(100_000), 1)),
+    ).toThrow();
     expect(() => validateDocxArchive(archive('x'.repeat(8_000_001)))).toThrow();
   });
   it('rejects too many short lines before embeddings', async () => {
-    await expect(extractMaterial('text/plain', Buffer.from('x\n'.repeat(10_001)))).rejects.toMatchObject({ code: 'MATERIAL_SEGMENT_LIMIT' });
-    expect(() => chunkSegments(Array.from({ length: 2_001 }, (_, index) => ({ text: 'x', locator: { kind: 'line' as const, number: index + 1 } })))).toThrow('MATERIAL_CHUNK_LIMIT');
+    await expect(
+      extractMaterial('text/plain', Buffer.from('x\n'.repeat(10_001))),
+    ).rejects.toMatchObject({ code: 'MATERIAL_SEGMENT_LIMIT' });
+    expect(() =>
+      chunkSegments(
+        Array.from({ length: 2_001 }, (_, index) => ({
+          text: 'x',
+          locator: { kind: 'line' as const, number: index + 1 },
+        })),
+      ),
+    ).toThrow('MATERIAL_CHUNK_LIMIT');
   });
   it('aggregates concentrated evidence without losing counts or provenance', () => {
     const rows: Evidence[] = Array.from({ length: 10_000 }, (_, index) => ({
-      answerId: `a${index}`, attemptId: 'attempt', revisionId: `r${index}`,
-      topicId: 'topic', level: 'easy', submittedAt: new Date('2026-01-01'), localDate: '2026-01-01',
-      pointsUnits: 5_000, gradeState: 'graded',
+      answerId: `a${index}`,
+      attemptId: 'attempt',
+      revisionId: `r${index}`,
+      topicId: 'topic',
+      level: 'easy',
+      submittedAt: new Date('2026-01-01'),
+      localDate: '2026-01-01',
+      pointsUnits: 5_000,
+      gradeState: 'graded',
     }));
     const summary = summarizeEvidence(rows);
     expect(summary.questionCount).toBe(10_000);
     expect(summary.percentage).toBe(50);
-    expect(summary.topics[0]?.evidenceAnswerIds).toEqual(rows.map((row) => row.answerId));
+    expect(summary.topics[0]?.evidenceAnswerIds).toEqual(
+      rows.map((row) => row.answerId),
+    );
     expect(summary.seriesByLevel[0]?.questionCount).toBe(10_000);
   });
 });

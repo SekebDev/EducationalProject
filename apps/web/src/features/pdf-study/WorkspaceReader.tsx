@@ -63,7 +63,11 @@ export function WorkspaceReader({ model }: { model: ReadyWorkspaceModel }) {
           </button>
         )}
       </div>
-      <div ref={scroll} className={styles.scrollPage} data-lesson-active={Boolean(animation.step)}>
+      <div
+        ref={scroll}
+        className={styles.scrollPage}
+        data-lesson-active={Boolean(animation.step)}
+      >
         <div
           className={styles.pageFrame}
           ref={frame}
@@ -91,7 +95,9 @@ export function WorkspaceReader({ model }: { model: ReadyWorkspaceModel }) {
               onContext={model.updateContext}
             />
           </div>
-          {model.showMascot && !animation.step && <ReaderMascot model={model} />}
+          {model.showMascot && !animation.step && (
+            <ReaderMascot model={model} />
+          )}
           <ReaderLesson model={model} scroll={scroll} frame={frame} />
         </div>
       </div>

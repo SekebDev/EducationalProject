@@ -24,19 +24,32 @@ import {
 const diagramSchema = z.strictObject({
   layout: z.enum(['flow', 'stack', 'graph', 'cycle', 'comparison']),
   nodes: z.array(z.string().min(1).max(140)).min(1).max(12),
-  edges: z.array(z.strictObject({ from: z.number().int().nonnegative(), to: z.number().int().nonnegative(), label: z.string().max(80).nullable() })).max(24),
+  edges: z
+    .array(
+      z.strictObject({
+        from: z.number().int().nonnegative(),
+        to: z.number().int().nonnegative(),
+        label: z.string().max(80).nullable(),
+      }),
+    )
+    .max(24),
 });
 const planSchema = z.strictObject({
   answer: z.string().min(1).max(2000),
   basis: z.enum(['source', 'general', 'unsupported']),
   citedBlockIds: z.array(z.string()).max(100),
-  steps: z.array(z.strictObject({
-    lineId: z.string().nullable(),
-    explanation: z.string().min(1).max(6000),
-    basis: z.enum(['source', 'general', 'unsupported']),
-    citedBlockIds: z.array(z.string()).max(100),
-    diagram: diagramSchema.nullable(),
-  })).min(1).max(120),
+  steps: z
+    .array(
+      z.strictObject({
+        lineId: z.string().nullable(),
+        explanation: z.string().min(1).max(6000),
+        basis: z.enum(['source', 'general', 'unsupported']),
+        citedBlockIds: z.array(z.string()).max(100),
+        diagram: diagramSchema.nullable(),
+      }),
+    )
+    .min(1)
+    .max(120),
   title: z.string().min(1).max(100),
 });
 
@@ -130,16 +143,35 @@ export function validateTutorPlan(
     (plan.basis === 'source'
       ? plan.citedBlockIds.length === 0
       : plan.citedBlockIds.length > 0) ||
-    plan.steps.some((step) => step.citedBlockIds.some((id) => !citationIds.has(id)) ||
-      (step.basis === 'source' ? !step.citedBlockIds.length : !!step.citedBlockIds.length) ||
-      step.diagram?.edges.some((edge) => edge.from >= step.diagram!.nodes.length || edge.to >= step.diagram!.nodes.length))
+    plan.steps.some(
+      (step) =>
+        step.citedBlockIds.some((id) => !citationIds.has(id)) ||
+        (step.basis === 'source'
+          ? !step.citedBlockIds.length
+          : !!step.citedBlockIds.length) ||
+        step.diagram?.edges.some(
+          (edge) =>
+            edge.from >= step.diagram!.nodes.length ||
+            edge.to >= step.diagram!.nodes.length,
+        ),
+    )
   ) {
     throw new Error('AI_CITATIONS_INVALID');
   }
-  const indices = plan.steps.map((step) => lines.findIndex((line) => line.id === step.lineId));
-  if (lines.length ? indices.some((index, position) => index < 0 || (position > 0 && index <= indices[position - 1]!)) ||
-    (selectedLines && (plan.steps.length !== lines.length || indices.some((index, position) => index !== position))) :
-    plan.steps.length !== 1 || plan.steps[0]!.lineId !== null) {
+  const indices = plan.steps.map((step) =>
+    lines.findIndex((line) => line.id === step.lineId),
+  );
+  if (
+    lines.length
+      ? indices.some(
+          (index, position) =>
+            index < 0 || (position > 0 && index <= indices[position - 1]!),
+        ) ||
+        (selectedLines &&
+          (plan.steps.length !== lines.length ||
+            indices.some((index, position) => index !== position)))
+      : plan.steps.length !== 1 || plan.steps[0]!.lineId !== null
+  ) {
     throw new Error('AI_LINES_INVALID');
   }
   // Apply the same application-delivery guard used by the existing tutor.
@@ -159,7 +191,12 @@ export function validateTutorPlan(
     enforced.segments[0]?.text !==
     [plan.answer, ...plan.steps.map((step) => step.explanation)].join('\n\n')
   ) {
-    return simplePlan(enforced.segments[0]!.text, 'general', blocks, lines.slice(0, 1));
+    return simplePlan(
+      enforced.segments[0]!.text,
+      'general',
+      blocks,
+      lines.slice(0, 1),
+    );
   }
   return { ...plan, sourceBlocks: blocks, sourceLines: lines };
 }
@@ -213,7 +250,13 @@ export async function explainPdf(
       'unsupported',
       input.blocks,
       input.selection?.rects.length ? lines : lines.slice(0, 12),
-      /desenh|diagram|grafo|fluxo/iu.test(input.question) ? { layout: 'flow', nodes: ['Início da demonstração', 'Etapa seguinte'], edges: [{ from: 0, to: 1, label: 'continua' }] } : null,
+      /desenh|diagram|grafo|fluxo/iu.test(input.question)
+        ? {
+            layout: 'flow',
+            nodes: ['Início da demonstração', 'Etapa seguinte'],
+            edges: [{ from: 0, to: 1, label: 'continua' }],
+          }
+        : null,
     );
     onDelta(plan.answer);
     return plan;
@@ -250,7 +293,13 @@ export async function explainPdf(
     } catch {
       throw new Error('AI_JSON_INVALID');
     }
-    const plan = validateTutorPlan(value, input.blocks, input.sources, lines, !!input.selection?.rects.length);
+    const plan = validateTutorPlan(
+      value,
+      input.blocks,
+      input.sources,
+      lines,
+      !!input.selection?.rects.length,
+    );
     if (plan.answer.startsWith(sent) && plan.answer.length > sent.length) {
       onDelta(plan.answer.slice(sent.length));
     }

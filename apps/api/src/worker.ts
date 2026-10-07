@@ -29,13 +29,17 @@ const purgeTimer = setInterval(() => {
     .purgeDue()
     .then(() => purger.pruneTutorAttempts())
     .catch(() => process.stderr.write('Falha na purga de exclusões.\n'))
-    .finally(() => { purging = false; });
+    .finally(() => {
+      purging = false;
+    });
 }, 60_000);
 purging = true;
 void purger
   .purgeDue()
   .catch(() => process.stderr.write('Falha na purga de exclusões.\n'))
-  .finally(() => { purging = false; });
+  .finally(() => {
+    purging = false;
+  });
 
 for (const signal of ['SIGINT', 'SIGTERM'] as const) {
   process.once(signal, () => {
