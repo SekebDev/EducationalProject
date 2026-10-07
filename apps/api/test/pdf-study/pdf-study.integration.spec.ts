@@ -76,6 +76,13 @@ async function withFixture(run: (fixture: Fixture) => Promise<void>) {
     await service.onModuleDestroy();
     await storage.purge(objectKey(owner, material));
     await pool.query('DELETE FROM material WHERE id=$1', [material]);
+    await pool.query(
+      'DELETE FROM message WHERE owner_id=$1 AND conversation_id=$2',
+      [owner, chat],
+    );
+    await pool.query('DELETE FROM pdf_tutor_attempt WHERE owner_id=$1', [
+      owner,
+    ]);
     await pool.query('DELETE FROM conversation WHERE id=$1', [chat]);
     await pool.query('DELETE FROM student WHERE id=ANY($1::uuid[])', [
       [owner, other],
