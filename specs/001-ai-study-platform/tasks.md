@@ -153,3 +153,109 @@ Entregar primeiro Setup + Foundation + US1; validar V01–V02. Acrescentar mater
 - [ ] T056 Cobrir axe, teclado e 360/768/1024/1440 px nos cinco fluxos, estados vazio/erro/pendente e registrar a conferência manual de leitor de tela em `tests/e2e/accessibility.spec.ts` e `specs/001-ai-study-platform/validation.md` per FR-019/plan: UX evidence (partial).
 - [ ] T057 Exercitar desligamento/reinício físico do worker, backup/restore isolado com journal de exclusões e indisponibilidade temporária do storage, registrando evidências em `tests/operations/` e `docs/operations.md` per V16/V18/plan: recovery (partial).
 - [X] T058 Atualizar `specs/001-ai-study-platform/quickstart.md` para comandos e estado atuais, distinguindo testes locais aprovados de ensaios reais pendentes, per Constitution V (contradicts).
+
+## Phase 11: Ajustes solicitados
+
+- [X] T059 Configurar modelos OpenAI de baixo custo para chat, provas, correção e insights, mantendo embedding econômico e segredos fora do repositório, em `apps/api/src/infrastructure/ai/provider.ts`, `.env.example` e `specs/001-ai-study-platform/plan.md`.
+- [X] T060 Revisar as superfícies da entrada, navegação, conversas e respostas, com movimento discreto e respeito a `prefers-reduced-motion`, em `apps/web/src/app/globals.css`.
+
+**Dependências**: T059 depende da fundação de IA T013; T060 depende da UI T014/T046. Podem avançar em paralelo. A revisão humana e os ensaios de staging T054–T057 continuam independentes desses ajustes.
+
+## Phase 12: Chat, design e execução local solicitados
+
+- [X] T061 Refazer todas as páginas com shadcn/ui, Magic UI e Motion, incluindo chat com menu de professor, arquivos à direita e revisão dos textos; registrar em `docs/frontend-design-review.md`.
+- [X] T062 Aceitar materiais Markdown e renderizar respostas com títulos, tabelas, código copiável e diagramas Mermaid seguros no chat.
+- [X] T063 Integrar OpenAI real com modelo econômico, personalidades validadas e limites de foco educacional no servidor; registrar testes em `docs/chat-markdown-and-safety.md`.
+- [X] T064 Preparar Docker Compose para web, API, worker, migrações, PostgreSQL e SMTP, com segredos somente em runtime; documentar em `docs/docker.md`.
+- [X] T065 Concluir testes de navegador, acessibilidade e build das páginas alteradas, registrando resultados e mantendo a prévia disponível.
+
+**Dependências**: T063 usa T062 e a fundação de IA. T064 pode avançar em paralelo. T065 valida a integração das alterações. Os ensaios de staging e revisões humanas anteriores permanecem pendentes.
+
+- [X] T066 Adicionar arrastar e soltar arquivos na conversa, envio em lote, validação compartilhada, recuperação com idempotência e regressões desktop/mobile em MaterialsPanel e tests/e2e/materials.spec.ts.
+
+## Phase 13: Instrumentos executáveis de validação
+
+**Input**: Regeneração por `speckit-tasks` em 01/10/2026, preservando IDs, fases e evidências anteriores. T054–T057 permanecem abertas até o aceite externo; tarefas abaixo completam suas partes automatizáveis.
+**Goal**: Produzir instrumentos reproduzíveis, sem confundir IA fake com qualidade pedagógica ou revisão humana.
+
+- [X] T067 Corrigir observações de falha/timeout, contagem mínima de 20 chats/provas/discursivas e 180 objetivas e relatório separado por fase em `tests/load/study.js`; adicionar regressões em `tests/load/measurement.spec.mjs` per T054/SC-003/SC-009.
+- [X] T068 [US2] Criar coletor de 30 respostas com fontes e 30 discursivas usando o provider real, com custo por tokens, teto antes de cada chamada, latência, modelo/schema e campos humanos vazios em `tests/evaluations/collect.ts`, `tests/evaluations/samples.ts` e `apps/api/src/infrastructure/ai/provider.ts` per T055/SC-004/SC-005.
+- [X] T069 [US3] Testar orçamento, localizadores, soma por critérios e rejeição de revisões incompletas, incluindo limites de concordância, em `apps/api/test/ai/evaluation.spec.ts` e `tests/evaluations/score.spec.mjs` per T055/Constitution III–IV.
+- [X] T070 [US3] Cobrir tentativa e resultado em 360/768/1024/1440 px com axe, foco e ações por teclado em `tests/e2e/exams.spec.ts`; documentar roteiro humano em `tests/operations/accessibility.md` per T056/FR-019/UX-006.
+- [X] T071 Automatizar interrupção física de processo worker e backup/restore de PostgreSQL isolado com journal de exclusões e falha temporária de storage local em `tests/operations/` per T057/V16/V18; preservar o aceite de S3 externo como pendente.
+- [X] T072 Executar verificações aplicáveis, registrar evidência atual e atualizar comandos/limites em `specs/001-ai-study-platform/validation.md`, `specs/001-ai-study-platform/quickstart.md`, `tests/evaluations/README.md` e `docs/operations.md` per Constitution V.
+
+**Independent tests**: US2: coletor valida 30 fontes e localizadores sem aceitar suporte humano inventado. US3: rubricas somam 10.000 unidades, pontuação fica em 0..1, revisões humanas incompletas falham e prova/resultado passam quatro larguras. US1/US4/US5 mantêm V01–V02/V11–V14 como aceite independente das fases anteriores.
+
+**Dependencies**: T067 usa T049; T068 usa T013/T021/T030; T069 depende de T068; T070 usa T034/T046; T071 usa T012/T044; T072 depende de T067–T071. T054–T057 exigem também ambiente/revisões externos documentados, não são concluídas apenas por preparar instrumentos.
+
+**Parallel examples**: T067 (carga), T070 (E2E) e T071 (operação) tratam arquivos distintos; T068 e T069 são sequenciais. US5 não tem tarefa paralela independente: a prática depende de geração e recomendações. Nesta execução não há delegação.
+
+**Implementation strategy**: Manter o MVP US1 e o histórico T001–T066, concluir instrumentos e regressões locais, executar gates e então `speckit-converge`. Ensaios reais só com staging e teto explícito; julgamentos humanos permanecem vazios até revisão.
+
+## Phase 14: Staging e avaliação autorizados
+
+**Input**: Usuário autorizou staging isolado e teto total de US$ 0,20 nesta sessão; pediu revisão pelo próprio agente. Revisão do agente deve ser identificada como automatizada e não satisfaz requisito de revisor humano da especificação.
+
+- [X] T073 Criar staging isolado com banco/arquivos sintéticos e portas loopback, sem interferir na stack existente, em `infra/compose.staging.yaml` e `docs/staging.md`.
+- [X] T074 Implementar trava de orçamento compartilhada por chamadas simultâneas do worker, contabilizando reservas e timeouts antes de chamar o provedor, com testes de regressão em `apps/api/src/infrastructure/ai/` e `apps/api/test/ai/`; o total de coleta e staging não pode ultrapassar US$ 0,20.
+- [X] T075 Executar coleta real e revisão automatizada dos resultados, registrar tokens/custo/latência e limitações em `tests/evaluations/` e `specs/001-ai-study-platform/validation.md`, sem preencher julgamento humano.
+- [X] T076 Executar carga fake e, dentro do saldo autorizado, carga real no staging isolado; registrar p95, falhas, quantidade de observações e saldo do teto em `tests/load/` e `specs/001-ai-study-platform/validation.md`.
+- [X] T077 Corrigir o gargalo de fila observado na carga fake (2/20 chats ultrapassam 10 s), permitindo concorrência global validada por tipo de trabalho em `apps/api/src/infrastructure/jobs/dispatcher.ts` e regressões em `apps/api/test/jobs/concurrency.spec.ts` per SC-009/plan: global concurrency.
+- [X] T078 Separar a limpeza de evidências E2E de relatórios de operação e coleta paga em `playwright.config.ts`, integrar a coleta ao ledger persistente e preservar o teto após a rodada interrompida em `tests/evaluations/collect.ts` per Constitution III/V.
+
+**Dependencies**: T074 antes de T075–T076; T073 antes da carga; T068/T069 antes da coleta. MVP US1 permanece utilizável. Não há autorização para publicar em produção.
+
+- [ ] T079 Corrigir instruções de basis/chunkIds e impedir exigências de correção além da rubrica/referência, após falhas observadas no ensaio real; testar o contrato das instruções e repetir coleta/carga dentro do mesmo ledger em apps/api/src/infrastructure/ai/, apps/api/test/ai/prompt-safety.spec.ts e tests/evaluations/ per FR-006/FR-012/SC-004/SC-005.
+
+- [X] T080 Explicitar geração sem arquivos e impor distribuição, temas e campos por tipo no schema restrito de provas; usar dúvida educacional concreta na fixture de carga e repetir ensaio no saldo autorizado em apps/api/src/infrastructure/ai/provider.ts, apps/api/test/ai/prompt-safety.spec.ts e tests/load/study.js per FR-007/FR-008/SC-009.
+
+## Phase 15: Convergence
+
+**Assessment**: 01/10/2026, código atual confrontado com spec/plan/tasks e constituição 1.0.0; sem comparação de branches. T054–T057 e T079 continuam abertas. A revisão autorizada pelo agente foi realizada e identificada como tal. As tarefas abaixo detalham lacunas verificadas, sem representar nova autorização de gasto.
+
+- [ ] T081 **CRITICAL** Preservar códigos de falha reconhecidos e contexto sanitizado de operação/request no dispatcher e filtro HTTP, mantendo resposta pública segura e sem prompts/segredos nos logs; reproduzir AI_SOURCE_INVALID/timeout/erro desconhecido em `apps/api/src/infrastructure/jobs/dispatcher.ts`, `apps/api/src/infrastructure/http/public-error.ts` e testes em `apps/api/test/jobs/` e `apps/api/test/auth/` per Constitution Quality Standards: diagnostic context (contradicts).
+- [ ] T082 Concluir como falha recuperável uma operação cujo terceiro lease expire, atualizando recurso/eventos e permitindo retry manual na mesma operação; testar três interrupções, fence tardio e efeito único em `apps/api/src/infrastructure/jobs/operations.ts` e `apps/api/test/jobs/operations.integration.spec.ts` per FR-018/US1-AC4/US3-AC7/plan: three executions (partial).
+- [ ] T083 [US2] Excluir do prompt histórico apoiado em materiais desmarcados, cruzando versões ativas com o snapshot de fontes da nova pergunta; preservar histórico visível e testar desmarcar/remarcar/excluir em `apps/api/src/modules/conversations/chat.job.ts`, `apps/api/test/conversations/` e `tests/e2e/materials.spec.ts` per FR-005/US2-AC5/plan: AI chat history (contradicts).
+- [ ] T084 [US2] Preservar ou representar explicitamente a classificação source/general/unsupported ao persistir e apresentar respostas, sem atribuir citações de um segmento a outro; documentar compatibilidade e testar chat misto em `apps/api/src/modules/conversations/chat.job.ts`, `packages/contracts/src/index.ts`, `apps/web/src/features/chat/` e `tests/e2e/materials.spec.ts` per FR-006/US2-AC2/US2-AC3 (partial).
+- [ ] T085 [US2] Corrigir fundamentação semântica, tratamento de divergências e recusa de citação fictícia, usando os casos reais inspecionados como regressões e avaliação repetível; não aprovar apenas IDs válidos e não substituir fontes por conhecimento externo em `apps/api/src/infrastructure/ai/`, `apps/api/test/ai/` e `tests/evaluations/` per FR-006/FR-021/SC-004/T079 (partial).
+- [ ] T086 [US3] Corrigir crédito parcial, equivalência à referência e coerência entre unidades/justificativa sem exigir tópicos ausentes da rubrica; reproduzir zero indevido em frações/equações e nota parcial superior à completa em `apps/api/src/infrastructure/ai/provider.ts`, `apps/api/src/modules/grading/`, `apps/api/test/grading/` e `tests/evaluations/` per FR-011/FR-012/US3-AC4/SC-005/T079 (partial).
+- [ ] T087 [US4] Fornecer ao provider de insights nomes/agregados e conteúdo mínimo autorizado de questões/respostas/feedback elegíveis, validar ações específicas contra essa evidência e sinalizar fallback/indisponibilidade; testar isolamento, contestação e troca de revisão em `apps/api/src/modules/insights/recommendations.service.ts`, `apps/api/src/infrastructure/ai/provider.ts`, `apps/api/test/insights/` e `apps/web/src/features/insights/` per FR-016/US4-AC1/plan: insights input and fallback (partial).
+- [ ] T088 Ajustar latência/capacidade reais de chat e geração, distinguir rejeição de reserva e insuficiência definitiva do teto e executar novamente 20 usuários com as quatro fases completas; incluir upload/extração/recuperação de materiais e orçamento previamente autorizado em `apps/api/src/infrastructure/jobs/dispatcher.ts`, `apps/api/src/infrastructure/ai/`, `tests/load/` e `specs/001-ai-study-platform/validation.md` per SC-009/T054/plan: performance (partial).
+- [ ] T089 [US3] Executar e registrar matriz de 100 configurações válidas de provas, cobrindo 10/30, apenas objetivas/apenas discursivas/mistas e vários temas; conferir toda prova publicada e registrar também falhas, sem confundir seis mocks do provider com o ensaio completo, em `apps/api/test/exams/`, `tests/evaluations/` e `specs/001-ai-study-platform/validation.md` per SC-002/FR-008/T026/T027 (partial).
+- [ ] T090 [US2] Isolar extração PDF/DOCX em processo com limites de tempo/memória e sem acesso de rede ou filesystem arbitrário; preservar localizadores e estados e testar arquivo hostil, timeout e continuidade de outros jobs em `apps/api/src/modules/materials/extract.ts`, `apps/api/src/modules/materials/extract.job.ts` e `apps/api/test/materials/` per TC-005/plan: materials extraction/research R4 (missing).
+- [ ] T091 Concluir avaliação pedagógica com 30 fontes e 30 discursivas revisadas por humano após corrigir a qualidade; incluir perguntas sem suporte e casos parciais/hostis, manter revisão do agente separada e registrar modelo/prompt/custo/latência em `tests/evaluations/` e `specs/001-ai-study-platform/validation.md` per SC-004/SC-005/T055 (partial).
+- [ ] T092 Executar roteiro Narrador/NVDA nos cinco fluxos e estados vazio/erro/pendente, incluindo confirmação, salvamento, diálogos e tabela equivalente; registrar anúncios ou defeitos e regressões aplicáveis em `tests/operations/accessibility.md`, `tests/e2e/` e `specs/001-ai-study-platform/validation.md` per FR-019/UX-006/T056 (partial).
+- [ ] T093 Ensaiar backup cifrado e restauração do bucket S3 isolado com journal recente, indisponibilidade temporária e medição da purga dentro de 24 h; confirmar acesso revogado e retry sem interpretar filesystem local como S3 em `tests/operations/`, `docs/operations.md` e `specs/001-ai-study-platform/validation.md` per FR-020/T057/V18/plan: recovery and retention (partial).
+- [ ] T094 Implementar limites concorrentes por proprietário para uma geração de prova e dois jobs de chat/correção, com decisão atômica entre requisições/processos, erro 429/retry e preservação da idempotência; testar duas contas e chamadas paralelas em `apps/api/src/infrastructure/jobs/`, `apps/api/src/modules/exams/`, `apps/api/src/modules/conversations/`, `apps/api/src/modules/attempts/` e `apps/api/test/` per plan: account concurrency (missing).
+- [ ] T095 [US2] Completar busca lexical portuguesa combinada à vetorial, chunking aproximado de 800 tokens com 120 de sobreposição sem cruzar localizadores e seleção de fontes com cobertura por tema de prova; testar proprietário/seleção/versão e temas em arquivos além dos primeiros 100 trechos em `apps/api/src/modules/materials/retrieval.ts`, `apps/api/src/modules/exams/exam.job.ts` e `apps/api/test/materials/` per plan: hybrid retrieval/research R4 (partial).
+- [ ] T096 Registrar modelo efetivamente retornado, versões/hash de prompt/schema, providerRequestId, tokens, latência e tentativa por geração/correção/recomendação, inclusive sem ledger de ensaio; adicionar migração compatível e testes sem dados estudantis nos logs em `apps/api/src/infrastructure/ai/`, `apps/api/src/modules/conversations/`, `apps/api/src/modules/exams/`, `apps/api/src/modules/grading/`, `apps/api/src/modules/insights/`, `apps/api/migrations/` e `docs/operations.md` per plan: AI provenance/contracts ai-jobs envelope/research R5 (partial).
+
+**Dependencies**: T081–T082 antes dos ensaios de recuperação/carga; T083–T086 antes de T091; T088 usa T094 e requer saldo autorizado para novas chamadas; T090/T095 precedem a carga com materiais; T096 precede nova evidência real. T089 pode usar fake para invariantes e deve identificar separadamente a qualidade do provider. T092 exige conferência humana; T093 exige bucket isolado. Critérios com participantes SC-001/SC-007 não são resultados comprovados por testes automatizados.
+
+## Phase 16: Implementações reconciliadas — 07/10/2026
+
+**Input**: Pedido do usuário para convergir nos documentos o trabalho local publicado e integrar em `dev`. Os IDs e estados anteriores são preservados. A evidência atual e seus limites estão em [convergence.md](convergence.md); tarefas concluídas de implementação não encerram aceites externos.
+
+- [X] T097 Registrar a landing Caderno, cena de rolagem, demonstração simulada, kit escolar e preferências de movimento em `apps/web/src/app/page.tsx`, `apps/web/src/components/landing/`, `docs/landing-page-caderno.md` e `docs/caderno-school-assets.md` per spec: EXT-002.
+- [X] T098 Registrar o editor PDF integrado à conversa, operações/revisão/IndexedDB, anotações, páginas extras e exportação em `apps/api/src/modules/pdf-study/`, `apps/web/src/features/pdf-study/`, migrações 010–013 e `docs/pdf-study.md`, distinguindo editor entregue de aula por etapas parcial, per spec: EXT-003/EXT-004.
+- [X] T099 Registrar validação de expansão DOCX, limites de extração/chunks, returnTo interno, retenção do limite diário do tutor após purga e agregação concentrada de evidências em `apps/api/test/security-regressions.spec.ts`, `apps/api/migrations/013_security_retention.sql` e `specs/001-ai-study-platform/convergence.md` per FR-001/FR-004/FR-020/Constitution Quality Standards.
+- [X] T100 Corrigir os bloqueios de formatação, lint e tipos e compatibilizar o contrato estruturado de etapas com o layout/exportação existente, sem descartar explicações ou diagramas; atualizar regressões em `apps/api/test/pdf-study-tutor.spec.ts` e registrar verificações em `validation.md` per Constitution I/III/V.
+
+## Phase 17: Convergence
+
+**Assessment**: 07/10/2026. T054–T057, T079 e T081–T096 permanecem abertas; não repetir IDs ou criar tarefas duplicadas para as mesmas lacunas. Feature 002 mantém seu escopo e histórico de validação separados. Esta fase acrescenta apenas as lacunas da integração de PDF identificadas na reconciliação documental.
+
+- [ ] T101 Integrar a aula PDF por etapas de ponta a ponta: persistir `lessons`/`activeLessonId`, servir avanço autenticado/idempotente com revisão, validar lessonId/stepId no retry e na pergunta de acompanhamento, preservar estado em edições/undo/redo e recarga, e registrar explicação completa/citações no histórico; testar **Entendi**, retomada, isolamento e conflitos em `apps/api/src/modules/pdf-study/`, `apps/api/test/pdf-study/` e `tests/e2e/pdf-study.spec.ts` per spec: EXT-004/FR-003/FR-018 (partial).
+- [ ] T102 Substituir o layout de notas de prosa e textos de ligação por sublinhados de linhas verificadas e diagramas gráficos conforme `layout`, com rótulos/arestas e revelação por etapa, preservando limites, exportação e documentos antigos; verificar fonte visual sem linha inventada, geometria, todas as etapas e desenhos em `apps/api/src/modules/pdf-study/tutor-layout.ts`, `apps/api/test/pdf-study-tutor.spec.ts`, `apps/api/test/pdf-study/export.spec.ts` e `docs/pdf-study.md` per spec: EXT-004/UX-005/UX-006 (partial).
+
+**Dependencies**: T101 antes do aceite E2E das aulas; T102 usa os IDs de etapas persistidas em T101. Não concluir essas tarefas apenas por o schema/provider ou componentes React existirem. Novos ensaios reais requerem orçamento disponível e não são parte da reconciliação documental.
+
+## Phase 18: Convergence
+
+**Assessment**: Resultado remoto do commit d1c502b em 07/10/2026, workflow 37616075392. Formatação, lint, tipos, unidades, integração, contratos e instrumentos aprovados; navegador com 12 sucessos e duas falhas. Build não executado após falha do E2E. PR #3 permanece aberto sem merge.
+
+- [ ] T103 Diagnosticar e corrigir o fluxo de recuperação de senha no ambiente CI: depois de **Enviar instruções**, a confirmação esperada não apareceu em 15 s; inspecionar erro HTTP, e-mail sintético, SMTP e estado/hidratação antes de alterar o teste, preservando a mensagem neutra contra enumeração de contas. Reproduzir `tests/e2e/auth-reset.spec.ts:27` e verificar envio do link e login com nova senha per FR-001/T009/T045/Constitution IV (partial).
+- [ ] T104 Diagnosticar e corrigir o fluxo de notas do editor PDF após edição/recuperação: o botão **Escrever nota** não ficou disponível antes do timeout de 120 s em `saveNote` chamado por `tests/e2e/pdf-study.spec.ts:149`; inspecionar foco, diálogo, página ativa e estado de salvamento, conservar o rascunho e completar anotação/recarga/exportação sem enfraquecer as asserções per spec: EXT-003/FR-018/UX-005 (partial).
+
+**Evidence**: Capturas/trace preservados pelo artifact browser-failure-evidence do workflow. T103–T104 registram sintomas reproduzidos; a causa ainda não foi confirmada. Após as correções, executar novamente os gates completos antes do merge em dev.

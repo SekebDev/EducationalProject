@@ -1,3 +1,10 @@
+import { ResourceIdPipe } from '../../infrastructure/http/resource-id.pipe.js';
+import { SessionGuard } from '../auth/session.guard.js';
+import { CurrentStudent } from '../auth/current-student.decorator.js';
+import type { CurrentStudentEntity } from '../auth/entities/student.entity.js';
+import { ZodValidationPipe } from '../../infrastructure/http/zod-validation.pipe.js';
+import { answerSchema, submitSchema } from './dto/attempts.dto.js';
+import type { AnswerDto, SubmitAttemptDto } from './dto/attempts.dto.js';
 import {
   Body,
   Controller,
@@ -9,136 +16,112 @@ import {
   Param,
   Post,
   Put,
-  Req,
+  UseGuards,
 } from '@nestjs/common';
-import type { Request } from 'express';
 import { z } from 'zod';
-import { AuthService } from '../auth/auth.service.js';
-import { getCookie } from '../../infrastructure/http/cookies.js';
 import { PublicError } from '../../infrastructure/http/public-error.js';
 import { AttemptsService } from './attempts.service.js';
 import { SubmissionService } from './submission.service.js';
 
-const answerSchema = z.strictObject({
-  value: z.string().max(20_000),
-  expectedVersion: z.number().int().nonnegative(),
-});
-const submitSchema = z.strictObject({
-  expectedVersion: z.number().int().positive(),
-  acceptUnanswered: z.boolean(),
-});
-
-function validId(value: string) {
-  if (!z.uuid().safeParse(value).success) {
-    throw new PublicError(404, 'NOT_FOUND', 'Recurso não encontrado.');
-  }
-  return value;
-}
-
-function input(value: unknown) {
-  const result = answerSchema.safeParse(value);
-  if (!result.success) {
-    throw new PublicError(422, 'ANSWER_INVALID', 'Confira a resposta.');
-  }
-  return result.data;
-}
-
+@UseGuards(SessionGuard)
 @Controller('api/v1/attempts')
 export class AttemptsController {
   constructor(
-    @Inject(AuthService) private readonly auth: AuthService,
     @Inject(AttemptsService) private readonly attempts: AttemptsService,
     @Inject(SubmissionService) private readonly submission: SubmissionService,
   ) {}
 
   @Get()
-  async list(@Req() request: Request) {
-    const student = await this.auth.currentStudent(
-      getCookie(request, 'study_session'),
-    );
+  async list(@CurrentStudent() student: CurrentStudentEntity) {
     return this.attempts.list(student.id);
   }
 
   @Get(':id')
-  async get(@Req() request: Request, @Param('id') id: string) {
-    const student = await this.auth.currentStudent(
-      getCookie(request, 'study_session'),
-    );
-    return this.attempts.get(student.id, validId(id));
+  async get(
+    @CurrentStudent() student: CurrentStudentEntity,
+    @Param('id', new ResourceIdPipe('Recurso não encontrado.')) id: string,
+  ) {
+    return this.attempts.get(student.id, id);
   }
 
   @Get(':id/result')
-  async result(@Req() request: Request, @Param('id') id: string) {
-    const student = await this.auth.currentStudent(
-      getCookie(request, 'study_session'),
-    );
-    return this.submission.result(student.id, validId(id));
+  async result(
+    @CurrentStudent() student: CurrentStudentEntity,
+    @Param('id', new ResourceIdPipe('Recurso não encontrado.')) id: string,
+  ) {
+    return this.submission.result(student.id, id);
   }
 
   @Post(':id/submit')
   async submit(
-    @Req() request: Request,
-    @Param('id') id: string,
-    @Body() body: unknown,
+    @CurrentStudent() student: CurrentStudentEntity,
+    @Param('id', new ResourceIdPipe('Recurso não encontrado.')) id: string,
+    @Body(
+      new ZodValidationPipe(
+        submitSchema,
+        'SUBMISSION_INVALID',
+        'Confira a entrega.',
+      ),
+    )
+    body: SubmitAttemptDto,
   ) {
-    const student = await this.auth.currentStudent(
-      getCookie(request, 'study_session'),
-    );
-    const parsed = submitSchema.safeParse(body);
-    if (!parsed.success) {
-      throw new PublicError(422, 'SUBMISSION_INVALID', 'Confira a entrega.');
-    }
     return this.submission.submit(
       student.id,
-      validId(id),
-      parsed.data.expectedVersion,
-      parsed.data.acceptUnanswered,
+      id,
+      body.expectedVersion,
+      body.acceptUnanswered,
     );
   }
 
   @Delete(':id')
   @HttpCode(204)
   async delete(
-    @Req() request: Request,
-    @Param('id') id: string,
+    @CurrentStudent() student: CurrentStudentEntity,
+    @Param('id', new ResourceIdPipe('Recurso não encontrado.')) id: string,
   ): Promise<void> {
-    const student = await this.auth.currentStudent(
-      getCookie(request, 'study_session'),
-    );
-    await this.submission.delete(student.id, validId(id));
+    await this.submission.delete(student.id, id);
   }
 
   @Put(':id/answers/:questionId/draft')
   async draft(
-    @Req() request: Request,
-    @Param('id') id: string,
-    @Param('questionId') questionId: string,
-    @Body() body: unknown,
+    @CurrentStudent() student: CurrentStudentEntity,
+    @Param('id', new ResourceIdPipe('Recurso não encontrado.')) id: string,
+    @Param('questionId', new ResourceIdPipe('Recurso não encontrado.'))
+    questionId: string,
+    @Body(
+      new ZodValidationPipe(
+        answerSchema,
+        'ANSWER_INVALID',
+        'Confira a resposta.',
+      ),
+    )
+    body: AnswerDto,
   ) {
-    const student = await this.auth.currentStudent(
-      getCookie(request, 'study_session'),
-    );
-    const answer = input(body);
     return this.attempts.draft(
       student.id,
-      validId(id),
-      validId(questionId),
-      answer.value,
-      answer.expectedVersion,
+      id,
+      questionId,
+      body.value,
+      body.expectedVersion,
     );
   }
 
   @Post(':id/answers/:questionId/confirm')
   async confirm(
-    @Req() request: Request,
-    @Param('id') id: string,
-    @Param('questionId') questionId: string,
+    @CurrentStudent() student: CurrentStudentEntity,
+    @Param('id', new ResourceIdPipe('Recurso não encontrado.')) id: string,
+    @Param('questionId', new ResourceIdPipe('Recurso não encontrado.'))
+    questionId: string,
     @Headers('idempotency-key') key: string,
-    @Body() body: unknown,
+    @Body(
+      new ZodValidationPipe(
+        answerSchema,
+        'ANSWER_INVALID',
+        'Confira a resposta.',
+      ),
+    )
+    body: AnswerDto,
   ) {
-    const student = await this.auth.currentStudent(
-      getCookie(request, 'study_session'),
-    );
     if (!z.uuid().safeParse(key).success) {
       throw new PublicError(
         400,
@@ -146,13 +129,12 @@ export class AttemptsController {
         'Envie uma chave UUID.',
       );
     }
-    const answer = input(body);
     return this.attempts.confirm(
       student.id,
-      validId(id),
-      validId(questionId),
-      answer.value,
-      answer.expectedVersion,
+      id,
+      questionId,
+      body.value,
+      body.expectedVersion,
       key,
     );
   }

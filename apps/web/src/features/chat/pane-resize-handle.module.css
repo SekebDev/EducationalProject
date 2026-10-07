@@ -1,0 +1,48 @@
+.handle {
+  position: relative;
+  z-index: 8;
+  width: 8px;
+  min-height: 0;
+  background: var(--paper);
+  cursor: col-resize;
+  touch-action: none;
+  user-select: none;
+  outline-offset: -2px;
+}
+.handle::before {
+  content: '';
+  position: absolute;
+  inset: 0 3px;
+  background: var(--line);
+}
+.grip {
+  position: absolute;
+  top: 50%;
+  left: 2px;
+  width: 4px;
+  height: 32px;
+  margin-top: -16px;
+  border-radius: 2px;
+  background: var(--muted);
+}
+.handle:hover::before,
+.handle:focus-visible::before {
+  background: var(--accent);
+}
+.handle:focus-visible {
+  outline: 2px solid var(--focus);
+}
+.handle:hover .grip,
+.handle:focus-visible .grip {
+  background: var(--accent);
+}
+@media (max-width: 1000px) {
+  .handle[data-kind='pdf'] {
+    display: none;
+  }
+}
+@media (max-width: 1199px) {
+  .handle[data-kind='materials'] {
+    display: none;
+  }
+}

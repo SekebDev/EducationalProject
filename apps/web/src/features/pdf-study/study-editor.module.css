@@ -1,0 +1,136 @@
+.canvasStage {
+  display: grid;
+  justify-items: center;
+  min-width: max-content;
+  padding: 1.5rem;
+}
+.pageSurface {
+  position: relative;
+  flex-shrink: 0;
+  background: #fff;
+  box-shadow: 0 4px 24px #1d352d14;
+}
+.pdfCanvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+.annotationLayer {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  z-index: 2;
+}
+.annotationLayer [role='button']:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 3px;
+}
+.textLayer {
+  position: absolute;
+  top: 0;
+  left: 0;
+  overflow: clip;
+  line-height: 1;
+  text-align: initial;
+  transform-origin: 0 0;
+  z-index: 1;
+  --scale-round-x: 1px;
+  --scale-round-y: 1px;
+  --min-font-size: 1;
+  --text-scale-factor: calc(var(--total-scale-factor) * var(--min-font-size));
+  --min-font-size-inv: calc(1 / var(--min-font-size));
+}
+.textLayer :is(span, br) {
+  color: transparent;
+  position: absolute;
+  white-space: pre;
+  cursor: text;
+  transform-origin: 0 0;
+  user-select: text;
+}
+.textLayer > :not(:global(.markedContent)),
+.textLayer :global(.markedContent) span:not(:global(.markedContent)) {
+  --font-height: 0;
+  --scale-x: 1;
+  --rotate: 0deg;
+  font-size: calc(var(--text-scale-factor) * var(--font-height));
+  transform: rotate(var(--rotate)) scaleX(var(--scale-x))
+    scale(var(--min-font-size-inv));
+}
+.textLayer :global(.markedContent) {
+  display: contents;
+}
+.textLayer ::selection {
+  background: #245dab44;
+}
+.textInactive {
+  pointer-events: none;
+  user-select: none;
+}
+.pageStatus {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  gap: 1rem;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background: var(--paper);
+  color: var(--muted);
+  z-index: 3;
+  padding: 2rem;
+  text-align: center;
+}
+.pageStatus button,
+.noteActions button {
+  border: 1px solid var(--line);
+  padding: 0.5rem 1rem;
+  border-radius: 0.5rem;
+  background: var(--paper);
+  color: var(--ink);
+  cursor: pointer;
+}
+.noteDialog {
+  width: min(28rem, calc(100vw - 2rem));
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--paper);
+  color: var(--ink);
+  padding: 1.5rem;
+}
+.noteDialog::backdrop {
+  background: #1d352d66;
+}
+.noteDialog form {
+  display: grid;
+  gap: 1rem;
+}
+.noteDialog h2 {
+  font-size: 1.25rem;
+  margin: 0;
+}
+.noteDialog textarea {
+  width: 100%;
+  resize: vertical;
+  border: 1px solid var(--line);
+  border-radius: 0.5rem;
+  padding: 0.75rem;
+  font: inherit;
+  background: #fff;
+  color: var(--ink);
+}
+.noteActions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.5rem;
+}
+.noteActions button[type='submit'] {
+  background: var(--accent);
+  color: var(--paper);
+}
+.noteActions button:disabled {
+  opacity: 0.5;
+  cursor: default;
+}

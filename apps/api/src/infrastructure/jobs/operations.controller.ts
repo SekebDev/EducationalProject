@@ -1,69 +1,56 @@
+import { ResourceIdPipe } from '../http/resource-id.pipe.js';
+import { SessionGuard } from '../../modules/auth/session.guard.js';
+import { CurrentStudent } from '../../modules/auth/current-student.decorator.js';
+import type { CurrentStudentEntity } from '../../modules/auth/entities/student.entity.js';
 import {
   Controller,
   Get,
   Headers,
   HttpCode,
-  Inject,
   Param,
   Post,
   Req,
   Res,
+  UseGuards,
 } from '@nestjs/common';
 import type { Request, Response } from 'express';
-import { z } from 'zod';
-import { AuthService } from '../../modules/auth/auth.service.js';
 import { readConfig } from '../config.js';
-import { getCookie } from '../http/cookies.js';
-import { PublicError } from '../http/public-error.js';
 import { OperationRepository } from './operations.js';
 
-function validId(value: string): string {
-  if (!z.uuid().safeParse(value).success) {
-    throw new PublicError(404, 'NOT_FOUND', 'Operação não encontrada.');
-  }
-  return value;
-}
-
+@UseGuards(SessionGuard)
 @Controller('api/v1/operations')
 export class OperationsController {
   private readonly operations = new OperationRepository(
     readConfig(process.env).databaseUrl,
   );
 
-  constructor(@Inject(AuthService) private readonly auth: AuthService) {}
-
   @Get(':id')
-  async get(@Param('id') id: string, @Req() request: Request) {
-    const student = await this.auth.currentStudent(
-      getCookie(request, 'study_session'),
-    );
-    return this.operations.get(student.id, validId(id));
+  async get(
+    @Param('id', new ResourceIdPipe('Operação não encontrada.')) id: string,
+    @CurrentStudent() student: CurrentStudentEntity,
+  ) {
+    return this.operations.get(student.id, id);
   }
 
   @Post(':id/retry')
   @HttpCode(202)
   async retry(
-    @Param('id') id: string,
+    @Param('id', new ResourceIdPipe('Operação não encontrada.')) id: string,
     @Headers('idempotency-key') key: string,
-    @Req() request: Request,
+    @CurrentStudent() student: CurrentStudentEntity,
   ) {
-    const student = await this.auth.currentStudent(
-      getCookie(request, 'study_session'),
-    );
-    await this.operations.retry(student.id, validId(id), key);
+    await this.operations.retry(student.id, id, key);
     return this.operations.get(student.id, id);
   }
 
   @Get(':id/events')
   async events(
-    @Param('id') id: string,
+    @Param('id', new ResourceIdPipe('Operação não encontrada.')) id: string,
+    @CurrentStudent() student: CurrentStudentEntity,
     @Req() request: Request,
     @Res() response: Response,
   ): Promise<void> {
-    const student = await this.auth.currentStudent(
-      getCookie(request, 'study_session'),
-    );
-    const operationId = validId(id);
+    const operationId = id;
     await this.operations.get(student.id, operationId);
     response.setHeader('Content-Type', 'text/event-stream');
     response.setHeader('Cache-Control', 'no-store');

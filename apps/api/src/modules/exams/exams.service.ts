@@ -1,3 +1,4 @@
+import type { ExamEntity } from './entities/exams.entity.js';
 import { Injectable } from '@nestjs/common';
 import type pg from 'pg';
 import { readConfig } from '../../infrastructure/config.js';
@@ -9,24 +10,6 @@ import { OperationRepository } from '../../infrastructure/jobs/operations.js';
 import { parseExamConfig, validateExamSources } from './exam-config.js';
 import type { ExamConfig } from './exam-config.js';
 import { toQuestionPublic } from '@study/contracts/exams';
-
-type ExamRow = {
-  id: string;
-  title: string;
-  study_level: string;
-  total: number;
-  objective_count: number;
-  essay_count: number;
-  state: string;
-  generation_operation_id: string;
-  conversation_id: string | null;
-  context_snapshot: {
-    title: string;
-    messages: Array<{ role: 'user' | 'assistant'; content: string }>;
-  } | null;
-  created_at: Date;
-  attempt_id?: string | null;
-};
 
 @Injectable()
 export class ExamsService {
@@ -239,7 +222,7 @@ export class ExamsService {
   }
 
   async get(ownerId: string, id: string) {
-    const result = await this.pool.query<ExamRow>(
+    const result = await this.pool.query<ExamEntity>(
       `SELECT id,title,study_level,total,objective_count,essay_count,state,generation_operation_id,conversation_id,context_snapshot,created_at,
        (SELECT a.id FROM attempt a WHERE a.exam_id=exam.id AND a.owner_id=exam.owner_id AND a.deleted_at IS NULL) AS attempt_id
        FROM exam WHERE owner_id=$1 AND id=$2 AND deleted_at IS NULL`,
@@ -297,7 +280,7 @@ export class ExamsService {
   }
 
   async list(ownerId: string) {
-    const result = await this.pool.query<ExamRow>(
+    const result = await this.pool.query<ExamEntity>(
       'SELECT id,title,study_level,total,objective_count,essay_count,state,generation_operation_id,conversation_id,context_snapshot,created_at FROM exam WHERE owner_id=$1 AND deleted_at IS NULL ORDER BY created_at DESC,id DESC LIMIT 20',
       [ownerId],
     );

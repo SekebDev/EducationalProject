@@ -1,29 +1,27 @@
-import { Controller, Get, Inject, Query, Req } from '@nestjs/common';
-import type { Request } from 'express';
-import { AuthService } from '../auth/auth.service.js';
-import { getCookie } from '../../infrastructure/http/cookies.js';
+import { UseGuards } from '@nestjs/common';
+import { SessionGuard } from '../auth/session.guard.js';
+import { CurrentStudent } from '../auth/current-student.decorator.js';
+import type { CurrentStudentEntity } from '../auth/entities/student.entity.js';
+import { Controller, Get, Inject, Query } from '@nestjs/common';
 import { RecommendationsService } from './recommendations.service.js';
 
+@UseGuards(SessionGuard)
 @Controller('api/v1/insights')
 export class InsightsController {
   constructor(
-    @Inject(AuthService) private readonly auth: AuthService,
     @Inject(RecommendationsService)
     private readonly recommendations: RecommendationsService,
   ) {}
 
   @Get()
   async get(
-    @Req() request: Request,
+    @CurrentStudent() student: CurrentStudentEntity,
     @Query('topicId') topicId?: string,
     @Query('level') level?: string,
     @Query('from') from?: string,
     @Query('to') to?: string,
     @Query('timezone') timezone?: string,
   ) {
-    const student = await this.auth.currentStudent(
-      getCookie(request, 'study_session'),
-    );
     return this.recommendations.list(student.id, {
       topicId,
       level,

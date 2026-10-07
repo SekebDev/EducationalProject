@@ -18,7 +18,7 @@ const databaseUrl = process.env.TEST_DATABASE_URL;
 const origin = 'http://localhost:3000';
 
 describe.skipIf(!databaseUrl)('material upload HTTP', () => {
-  it('limits, isolates, extracts and revokes a material', async () => {
+  it('limits, isolates, extracts and revokes a Markdown material', async () => {
     if (!databaseUrl) {
       throw new Error('TEST_DATABASE_URL obrigatório');
     }
@@ -108,8 +108,8 @@ describe.skipIf(!databaseUrl)('material upload HTTP', () => {
       const form = new FormData();
       form.append(
         'file',
-        new Blob(['Linha primeira\nLinha segunda'], { type: 'text/plain' }),
-        'aula.txt',
+        new Blob(['Linha primeira\nLinha segunda'], { type: 'text/markdown' }),
+        'aula.md',
       );
       const key = randomUUID();
       const send = (

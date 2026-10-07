@@ -44,13 +44,13 @@ Data: 2026-09-28. Decisões propostas para implementação, não resultados de b
 
 ## R5 — API e modelo de IA
 
-**Decisão:** SDK oficial, Responses API, JSON Schema estrito e `store:false`. Baseline `gpt-6-sol` para chat, provas, correção e explicação de insights, com variáveis por função. A documentação confirma streaming e Structured Outputs; acesso e limites da conta não foram testados.
+**Decisão:** SDK oficial, Responses API, JSON Schema estrito e `store:false`. Baseline econômico `gpt-4.1-nano` para chat, provas, correção e explicação de insights, com variáveis por função. A documentação confirma streaming e Structured Outputs; Uma chamada curta real de chat foi validada em 30/09/2026. Qualidade pedagógica, carga e limites da conta exigem ensaios específicos.
 
 **Motivo:** baseline comum reduz variáveis até haver corpus. Não há evidência para prometer qualidade ou custo do produto. Medir tokens, custo por conversa/prova/correção, qualidade e latência; usar preços vigentes no ensaio. Liberar somente configuração que cumpra SC-004/005/009 e orçamento. Registrar modelo retornado e versões de prompt/schema em cada geração.
 
 **Alternativas:** modelo menor pode substituir após avaliação; modelo mais forte é candidato se qualidade falhar. Não fazer fallback silencioso. Fine-tuning, agentes e ferramentas executáveis não são necessários.
 
-**Fontes:** [GPT-6 Sol](https://developers.openai.com/api/docs/models/gpt-6-sol), [Responses](https://developers.openai.com/api/docs/guides/migrate-to-responses), [Structured Outputs](https://developers.openai.com/api/docs/guides/structured-outputs).
+**Fontes:** [GPT-4.1 nano](https://developers.openai.com/api/docs/models/gpt-4.1-nano), [Responses](https://developers.openai.com/api/docs/guides/migrate-to-responses), [Structured Outputs](https://developers.openai.com/api/docs/guides/structured-outputs).
 
 ## R6 — Referências, notas e instruções hostis
 

@@ -56,6 +56,18 @@ jobs:
       - run: pnpm test:unit
       - run: pnpm test:integration
       - run: pnpm test:contract
+      - run: pnpm test:instruments
+      - run: pnpm test:evaluations:collect --dry-run
       - run: pnpm exec playwright install --with-deps msedge
       - run: pnpm test:e2e
       - run: pnpm build
+      - name: Preserve browser failure evidence
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: browser-failure-evidence
+          path: |
+            test-results/
+            playwright-report/
+          if-no-files-found: ignore
+          retention-days: 7

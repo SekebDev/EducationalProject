@@ -2,17 +2,43 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
+import { motion } from 'motion/react';
+import { useReducedMotion } from '@/lib/use-reduced-motion';
 import type { Conversation, Page } from '@study/contracts';
+import { BlurFade } from '@/components/ui/blur-fade';
+import { NumberTicker } from '@/components/ui/number-ticker';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent } from '@/components/ui/card';
 import { StudyShell } from '../../features/study/StudyShell';
 import { api, errorMessage } from '../../lib/api';
+import styles from './conversations.module.css';
+
+const dateFormatter = new Intl.DateTimeFormat('pt-BR', {
+  day: '2-digit',
+  month: 'short',
+  year: 'numeric',
+});
+const personalityNames = {
+  acolhedora: 'acolhedor',
+  objetiva: 'objetivo',
+  socratica: 'socrático',
+};
 
 export default function ConversationsPage() {
   const [items, setItems] = useState<Conversation[]>([]);
   const [cursor, setCursor] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
   const [error, setError] = useState('');
+  const reducedMotion = useReducedMotion();
+
   async function load(next?: string) {
     setError('');
+    if (next) {
+      setLoadingMore(true);
+    } else {
+      setLoading(true);
+    }
     try {
       const page = await api<Page<Conversation>>(
         `/conversations${next ? `?cursor=${encodeURIComponent(next)}` : ''}`,
@@ -25,104 +51,192 @@ export default function ConversationsPage() {
       setError(errorMessage(cause));
     } finally {
       setLoading(false);
+      setLoadingMore(false);
     }
   }
+
   useEffect(() => {
     void load();
   }, []);
+
   return (
     <StudyShell title="Conversas">
-      <main className="main-content">
-        <section className="study-hero" aria-labelledby="study-hero-title">
-          <div className="study-hero-copy">
-            <span className="eyebrow">Seu espaço de estudo</span>
-            <h2 id="study-hero-title">
-              Toda descoberta começa com uma pergunta.
-            </h2>
-            <p>
-              Traga uma dúvida, escolha o jeito de aprender e desenvolva a ideia
-              com seu professor de IA.
-            </p>
-            <Link className="button hero-action" href="/conversas/nova">
-              Começar conversa <span aria-hidden="true">↗</span>
-            </Link>
-          </div>
-          <div className="study-hero-note" aria-hidden="true">
-            <span className="note-index">CADERNO / 01</span>
-            <span className="note-question">
-              E se eu perguntar de outro jeito?
-            </span>
-            <span className="note-rule" />
-            <span className="note-answer">
-              É assim que o entendimento avança.
-            </span>
-          </div>
-        </section>
-        <div className="section-heading">
-          <div>
-            <span className="eyebrow">Retome de onde parou</span>
-            <h2>Suas conversas</h2>
-          </div>
-          {!loading && items.length > 0 && (
-            <span className="section-count">{items.length} nesta página</span>
-          )}
-        </div>
-        {error && (
-          <p className="form-error" role="alert">
-            {error}
-          </p>
-        )}
-        {loading ? (
-          <p aria-busy="true">Carregando conversas…</p>
-        ) : items.length === 0 ? (
-          <div className="empty-grid">
-            <div className="empty">
-              <span className="eyebrow">Primeiro passo</span>
-              <h3>O que você quer entender hoje?</h3>
+      <main className={`main-content ${styles.page}`}>
+        <BlurFade delay={0.06} duration={0.55}>
+          <section
+            className={styles.hero}
+            aria-labelledby="conversations-title"
+          >
+            <div className={styles.heroCopy}>
+              <span className={styles.kicker}>
+                <span className={styles.kickerDot} /> SEU ESPAÇO DE DESCOBERTA
+              </span>
+              <h2 id="conversations-title">
+                Toda descoberta começa com <em>uma pergunta.</em>
+              </h2>
               <p>
-                Escolha o estilo do professor e faça sua primeira pergunta. Você
-                pode começar sem enviar materiais.
+                Converse para entender suas dúvidas, explore as fontes e
+                encontre seu jeito de aprender.
               </p>
-              <Link className="button secondary" href="/conversas/nova">
-                Criar conversa
+              <Link className={styles.heroLink} href="/conversas/nova">
+                Começar uma conversa <span aria-hidden="true">↗</span>
               </Link>
             </div>
-            <aside className="prompt-note" aria-label="Ideias para começar">
-              <span className="eyebrow">Precisa de uma ideia?</span>
-              <p>“Explique fotossíntese com um exemplo do dia a dia.”</p>
-              <p>“Por que essa fórmula funciona?”</p>
-              <p>“Me ajude a revisar antes da prova.”</p>
-            </aside>
-          </div>
-        ) : (
-          <div className="list">
-            {items.map((item) => (
-              <article className="list-item" key={item.id}>
-                <div>
-                  <Link href={`/conversas/${item.id}`}>{item.title}</Link>
-                  <p>
-                    Professor {item.personality} ·{' '}
-                    {new Date(item.createdAt).toLocaleDateString('pt-BR')}
-                  </p>
-                </div>
-                <Link
-                  className="button secondary small"
-                  href={`/conversas/${item.id}`}
-                >
-                  Abrir
-                </Link>
-              </article>
-            ))}
-          </div>
-        )}
-        {cursor && (
-          <button
-            className="button secondary"
-            onClick={() => void load(cursor)}
+            <motion.div
+              className={styles.heroArtwork}
+              aria-hidden="true"
+              initial={reducedMotion ? false : { opacity: 0, x: 30 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ delay: 0.2, duration: 0.65 }}
+            >
+              <div className={styles.artOrbit} />
+              <motion.div
+                className={styles.artSheet}
+                animate={
+                  reducedMotion ? {} : { y: [0, -9, 0], rotate: [5, 3, 5] }
+                }
+                transition={{
+                  duration: 7,
+                  repeat: Infinity,
+                  ease: 'easeInOut',
+                }}
+              >
+                <span className={styles.artNumber}>01 — CADERNO DE IDEIAS</span>
+                <span className={styles.artQuestion}>
+                  E se eu perguntar
+                  <br />
+                  de outro jeito?
+                </span>
+                <span className={styles.artLine} />
+                <span className={styles.artAnswer}>
+                  É assim que o entendimento avança.
+                </span>
+              </motion.div>
+              <span className={styles.artSparkle}>✳</span>
+            </motion.div>
+          </section>
+        </BlurFade>
+
+        <BlurFade delay={0.16} duration={0.5}>
+          <section
+            className={styles.collection}
+            aria-labelledby="conversation-list-title"
           >
-            Carregar mais
-          </button>
-        )}
+            <div className={styles.collectionHeading}>
+              <div>
+                <span className={styles.kicker}>CONTINUE DE ONDE PAROU</span>
+                <h2 id="conversation-list-title">
+                  Suas conversas<span className={styles.headingPeriod}>.</span>
+                </h2>
+              </div>
+              {!loading && items.length > 0 && (
+                <span
+                  className={styles.count}
+                  aria-label={`${items.length} ${items.length === 1 ? 'conversa' : 'conversas'}`}
+                >
+                  <NumberTicker value={items.length} aria-hidden="true" />{' '}
+                  {items.length === 1 ? 'conversa' : 'conversas'}
+                </span>
+              )}
+            </div>
+            {error && (
+              <div className={styles.loadError}>
+                <p className="form-error" role="alert">
+                  {error}
+                </p>
+                <Button
+                  variant="outline"
+                  onClick={() =>
+                    void load(items.length ? (cursor ?? undefined) : undefined)
+                  }
+                >
+                  Tentar novamente
+                </Button>
+              </div>
+            )}
+            {loading ? (
+              <div
+                className={styles.skeletons}
+                aria-busy="true"
+                aria-label="Carregando conversas"
+              >
+                {[0, 1, 2].map((index) => (
+                  <div className={styles.skeleton} key={index} />
+                ))}
+              </div>
+            ) : items.length === 0 && !error ? (
+              <Card className={styles.emptyCard}>
+                <CardContent className={styles.emptyContent}>
+                  <div className={styles.emptySymbol} aria-hidden="true">
+                    ?
+                  </div>
+                  <div>
+                    <span className={styles.kicker}>O PRIMEIRO CAPÍTULO</span>
+                    <h3>O que você quer entender hoje?</h3>
+                    <p>
+                      Escolha o estilo do professor e faça sua primeira
+                      pergunta. Materiais de apoio são opcionais.
+                    </p>
+                    <div className={styles.promptIdeas}>
+                      <span>PARA COMEÇAR</span>
+                      <p>
+                        “Explique fotossíntese com um exemplo do dia a dia.”
+                      </p>
+                      <p>“Por que essa fórmula funciona?”</p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            ) : (
+              <div className={styles.cards}>
+                {items.map((item, index) => (
+                  <motion.article
+                    className={styles.conversationCard}
+                    key={item.id}
+                    initial={reducedMotion ? false : { opacity: 0, y: 16 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{
+                      delay: Math.min(index, 8) * 0.055,
+                      duration: 0.38,
+                    }}
+                    whileHover={reducedMotion ? {} : { y: -4 }}
+                  >
+                    <Link
+                      className={styles.cardLink}
+                      href={`/conversas/${item.id}`}
+                      aria-label={`Abrir conversa ${item.title}`}
+                    >
+                      <span className={styles.cardIndex}>
+                        {String(index + 1).padStart(2, '0')}
+                      </span>
+                      <span className={styles.cardBody}>
+                        <strong>{item.title}</strong>
+                        <span>
+                          Estilo {personalityNames[item.personality]}{' '}
+                          <span aria-hidden="true">·</span>{' '}
+                          {dateFormatter.format(new Date(item.createdAt))}
+                        </span>
+                      </span>
+                      <span className={styles.cardArrow} aria-hidden="true">
+                        ↗
+                      </span>
+                    </Link>
+                  </motion.article>
+                ))}
+              </div>
+            )}
+            {cursor && (
+              <Button
+                variant="outline"
+                className={styles.moreButton}
+                onClick={() => void load(cursor)}
+                disabled={loadingMore}
+              >
+                {loadingMore ? 'Carregando…' : 'Carregar mais conversas'}
+              </Button>
+            )}
+          </section>
+        </BlurFade>
       </main>
     </StudyShell>
   );

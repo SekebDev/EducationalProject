@@ -7,7 +7,10 @@ import { createPool, transaction } from '../../infrastructure/db/pool.js';
 import { readConfig } from '../../infrastructure/config.js';
 import { PublicError } from '../../infrastructure/http/public-error.js';
 
-type PublicStudent = { id: string; email: string; timezone: string };
+import type {
+  CurrentStudentEntity,
+  StudentEntity,
+} from './entities/student.entity.js';
 
 function hashToken(token: string): string {
   return createHash('sha256').update(token).digest('hex');
@@ -22,13 +25,13 @@ export class AuthService {
     emailInput: string,
     password: string,
     csrfToken: string,
-  ): Promise<{ student: PublicStudent; token: string }> {
+  ): Promise<{ student: CurrentStudentEntity; token: string }> {
     const email = emailInput.trim().toLowerCase();
     const passwordHash = await argon2.hash(password, { type: argon2.argon2id });
     const token = randomBytes(32).toString('base64url');
     try {
       const student = await transaction(this.pool, async (client) => {
-        const registered = await client.query<PublicStudent>(
+        const registered = await client.query<CurrentStudentEntity>(
           'INSERT INTO student (email,password_hash) VALUES ($1,$2) RETURNING id,email,timezone',
           [email, passwordHash],
         );
@@ -56,13 +59,12 @@ export class AuthService {
     emailInput: string,
     password: string,
     csrfToken: string,
-  ): Promise<{ student: PublicStudent; token: string }> {
+  ): Promise<{ student: CurrentStudentEntity; token: string }> {
     const email = emailInput.trim().toLowerCase();
-    const found = await this.pool.query<
-      PublicStudent & { password_hash: string }
-    >('SELECT id,email,timezone,password_hash FROM student WHERE email=$1', [
-      email,
-    ]);
+    const found = await this.pool.query<StudentEntity>(
+      'SELECT id,email,timezone,password_hash FROM student WHERE email=$1',
+      [email],
+    );
     const row = found.rows[0];
     if (!row || !(await argon2.verify(row.password_hash, password))) {
       throw new PublicError(
@@ -72,18 +74,34 @@ export class AuthService {
       );
     }
     const token = randomBytes(32).toString('base64url');
-    await this.insertSession(this.pool, row.id, token, csrfToken);
+    await transaction(this.pool, async (client) => {
+      // Serialize session creation with password changes, without holding a lock during Argon2.
+      const current = await client.query<{ password_hash: string }>(
+        'SELECT password_hash FROM student WHERE id=$1 FOR UPDATE',
+        [row.id],
+      );
+      if (current.rows[0]?.password_hash !== row.password_hash) {
+        throw new PublicError(
+          401,
+          'INVALID_CREDENTIALS',
+          'E-mail ou senha inválidos.',
+        );
+      }
+      await this.insertSession(client, row.id, token, csrfToken);
+    });
     return {
       student: { id: row.id, email: row.email, timezone: row.timezone },
       token,
     };
   }
 
-  async currentStudent(token: string | undefined): Promise<PublicStudent> {
+  async currentStudent(
+    token: string | undefined,
+  ): Promise<CurrentStudentEntity> {
     if (!token) {
       throw new PublicError(401, 'UNAUTHENTICATED', 'Entre para continuar.');
     }
-    const result = await this.pool.query<PublicStudent>(
+    const result = await this.pool.query<CurrentStudentEntity>(
       `SELECT st.id,st.email,st.timezone FROM session s JOIN student st ON st.id=s.student_id
        WHERE s.token_hash=$1 AND s.revoked_at IS NULL AND s.expires_at>now()`,
       [hashToken(token)],
@@ -116,10 +134,17 @@ export class AuthService {
       return;
     }
     const token = randomBytes(32).toString('base64url');
-    await this.pool.query(
-      "INSERT INTO password_reset(student_id,token_hash,expires_at) VALUES ($1,$2,now()+interval '15 minutes')",
-      [id, hashToken(token)],
-    );
+    await transaction(this.pool, async (client) => {
+      await client.query('SELECT id FROM student WHERE id=$1 FOR UPDATE', [id]);
+      await client.query(
+        'UPDATE password_reset SET used_at=now() WHERE student_id=$1 AND used_at IS NULL',
+        [id],
+      );
+      await client.query(
+        "INSERT INTO password_reset(student_id,token_hash,expires_at) VALUES ($1,$2,now()+interval '15 minutes')",
+        [id, hashToken(token)],
+      );
+    });
     const transporter = nodemailer.createTransport({
       host: this.config.smtpHost,
       port: this.config.smtpPort,
@@ -140,6 +165,21 @@ export class AuthService {
       type: argon2.argon2id,
     });
     await transaction(this.pool, async (client) => {
+      const owner = await client.query<{ student_id: string }>(
+        'SELECT student_id FROM password_reset WHERE token_hash=$1',
+        [hashToken(token)],
+      );
+      if (!owner.rows[0]) {
+        throw new PublicError(
+          422,
+          'RESET_INVALID',
+          'Link inválido ou expirado.',
+        );
+      }
+      // Use the same lock order for issuing links, consuming links and creating sessions.
+      await client.query('SELECT id FROM student WHERE id=$1 FOR UPDATE', [
+        owner.rows[0].student_id,
+      ]);
       const result = await client.query<{ id: string; student_id: string }>(
         'SELECT id,student_id FROM password_reset WHERE token_hash=$1 AND used_at IS NULL AND expires_at>now() FOR UPDATE',
         [hashToken(token)],
@@ -157,8 +197,8 @@ export class AuthService {
         row.student_id,
       ]);
       await client.query(
-        'UPDATE password_reset SET used_at=now() WHERE id=$1',
-        [row.id],
+        'UPDATE password_reset SET used_at=now() WHERE student_id=$1 AND used_at IS NULL',
+        [row.student_id],
       );
       await client.query(
         'UPDATE session SET revoked_at=now() WHERE student_id=$1 AND revoked_at IS NULL',

@@ -1,3 +1,10 @@
+import { ZodValidationPipe } from '../../infrastructure/http/zod-validation.pipe.js';
+import { openDisputeSchema } from './dto/open-dispute.dto.js';
+import type { OpenDisputeDto } from './dto/open-dispute.dto.js';
+import { ResourceIdPipe } from '../../infrastructure/http/resource-id.pipe.js';
+import { SessionGuard } from '../auth/session.guard.js';
+import { CurrentStudent } from '../auth/current-student.decorator.js';
+import type { CurrentStudentEntity } from '../auth/entities/student.entity.js';
 import {
   Body,
   Controller,
@@ -6,68 +13,50 @@ import {
   Inject,
   Param,
   Post,
-  Req,
+  UseGuards,
 } from '@nestjs/common';
-import type { Request } from 'express';
-import { z } from 'zod';
-import { AuthService } from '../auth/auth.service.js';
-import { getCookie } from '../../infrastructure/http/cookies.js';
-import { PublicError } from '../../infrastructure/http/public-error.js';
 import { DisputesService } from './disputes.service.js';
 
-function id(value: string) {
-  if (!z.uuid().safeParse(value).success) {
-    throw new PublicError(404, 'NOT_FOUND', 'Recurso não encontrado.');
-  }
-  return value;
-}
-
+@UseGuards(SessionGuard)
 @Controller('api/v1')
 export class GradingController {
   constructor(
-    @Inject(AuthService) private readonly auth: AuthService,
     @Inject(DisputesService) private readonly disputes: DisputesService,
   ) {}
 
   @Get('answers/:id/grade-revisions')
-  async revisions(@Req() request: Request, @Param('id') answerId: string) {
-    const student = await this.auth.currentStudent(
-      getCookie(request, 'study_session'),
-    );
-    return this.disputes.revisions(student.id, id(answerId));
+  async revisions(
+    @CurrentStudent() student: CurrentStudentEntity,
+    @Param('id', new ResourceIdPipe('Recurso não encontrado.'))
+    answerId: string,
+  ) {
+    return this.disputes.revisions(student.id, answerId);
   }
 
   @Post('answers/:id/disputes')
   async open(
-    @Req() request: Request,
-    @Param('id') answerId: string,
-    @Body() body: unknown,
-  ) {
-    const student = await this.auth.currentStudent(
-      getCookie(request, 'study_session'),
-    );
-    const parsed = z
-      .strictObject({ reason: z.string().min(1).max(2_000) })
-      .safeParse(body);
-    if (!parsed.success) {
-      throw new PublicError(
-        422,
+    @CurrentStudent() student: CurrentStudentEntity,
+    @Param('id', new ResourceIdPipe('Recurso não encontrado.'))
+    answerId: string,
+    @Body(
+      new ZodValidationPipe(
+        openDisputeSchema,
         'DISPUTE_INVALID',
         'Explique o motivo da contestação.',
-      );
-    }
-    return this.disputes.open(student.id, id(answerId), parsed.data.reason);
+      ),
+    )
+    body: OpenDisputeDto,
+  ) {
+    return this.disputes.open(student.id, answerId, body.reason);
   }
 
   @Post('disputes/:id/reevaluate')
   async reevaluate(
-    @Req() request: Request,
-    @Param('id') disputeId: string,
+    @CurrentStudent() student: CurrentStudentEntity,
+    @Param('id', new ResourceIdPipe('Recurso não encontrado.'))
+    disputeId: string,
     @Headers('idempotency-key') key: string,
   ) {
-    const student = await this.auth.currentStudent(
-      getCookie(request, 'study_session'),
-    );
-    return this.disputes.reevaluate(student.id, id(disputeId), key);
+    return this.disputes.reevaluate(student.id, disputeId, key);
   }
 }

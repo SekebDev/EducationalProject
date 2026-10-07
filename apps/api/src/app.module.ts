@@ -9,6 +9,7 @@ import { AttemptsModule } from './modules/attempts/attempts.module.js';
 import { GradingModule } from './modules/grading/grading.module.js';
 import { InsightsModule } from './modules/insights/insights.module.js';
 import { PracticeModule } from './modules/insights/practice.module.js';
+import { PdfStudyModule } from './modules/pdf-study/pdf-study.module.js';
 
 @Module({
   imports: [
@@ -21,6 +22,7 @@ import { PracticeModule } from './modules/insights/practice.module.js';
     GradingModule,
     InsightsModule,
     PracticeModule,
+    PdfStudyModule,
   ],
   controllers: [HealthController],
 })

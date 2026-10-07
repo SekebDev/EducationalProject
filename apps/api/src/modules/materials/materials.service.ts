@@ -1,3 +1,4 @@
+import type { MaterialEntity } from './entities/materials.entity.js';
 import { createHash, randomUUID } from 'node:crypto';
 import { Injectable } from '@nestjs/common';
 import { readConfig } from '../../infrastructure/config.js';
@@ -12,19 +13,6 @@ import {
 } from '../../infrastructure/storage/material-storage.js';
 import { detectMaterialMime } from './upload.js';
 import type { UploadedMaterial } from './upload.js';
-
-type MaterialRow = {
-  id: string;
-  conversation_id: string;
-  original_name: string;
-  detected_mime: string | null;
-  byte_size: number;
-  state: string;
-  error_code: string | null;
-  version: number;
-  created_at: Date;
-  selected?: boolean;
-};
 
 @Injectable()
 export class MaterialsService {
@@ -151,7 +139,7 @@ export class MaterialsService {
     if (!exists.rowCount) {
       throw new PublicError(404, 'NOT_FOUND', 'Conversa não encontrada.');
     }
-    const rows = await this.pool.query<MaterialRow>(
+    const rows = await this.pool.query<MaterialEntity>(
       `SELECT m.id,m.conversation_id,m.original_name,m.detected_mime,m.byte_size,m.state,m.error_code,m.version,m.created_at,
         (s.material_id IS NOT NULL) AS selected FROM material m
        LEFT JOIN conversation_source s ON s.owner_id=m.owner_id AND s.conversation_id=m.conversation_id AND s.material_id=m.id
@@ -162,7 +150,7 @@ export class MaterialsService {
   }
 
   async get(ownerId: string, id: string) {
-    const found = await this.pool.query<MaterialRow>(
+    const found = await this.pool.query<MaterialEntity>(
       `SELECT m.id,m.conversation_id,m.original_name,m.detected_mime,m.byte_size,m.state,m.error_code,m.version,m.created_at,
         (s.material_id IS NOT NULL) AS selected FROM material m
        JOIN conversation c ON c.owner_id=m.owner_id AND c.id=m.conversation_id AND c.deleted_at IS NULL
@@ -226,7 +214,7 @@ export class MaterialsService {
     });
   }
 
-  private view(row: MaterialRow) {
+  private view(row: MaterialEntity) {
     return {
       id: row.id,
       conversationId: row.conversation_id,

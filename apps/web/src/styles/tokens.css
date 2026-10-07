@@ -1,19 +1,62 @@
 :root {
   color-scheme: light;
-  --canvas: #f7f7f2;
-  --paper: #fff;
-  --ink: #202a27;
-  --muted: #53615a;
-  --line: #d5ddd6;
-  --accent: #1e5b49;
-  --accent-dark: #154736;
+  --canvas: #f8f5ee;
+  --paper: #fffefa;
+  --ink: #1d352d;
+  --muted: #58645c;
+  --line: #dfe2d8;
+  --accent: #173d32;
+  --accent-dark: #0e3026;
+  --sage: #dce8d6;
+  --apricot: #e9a77c;
   --error: #a52d35;
   --warning: #775a17;
-  --focus: #134fbc;
-  font-family:
-    'Source Sans 3',
-    Segoe UI,
-    Arial,
-    sans-serif;
+  --focus: #326a53;
+  --background: var(--canvas);
+  --foreground: var(--ink);
+  --card: var(--paper);
+  --card-foreground: var(--ink);
+  --popover: var(--paper);
+  --popover-foreground: var(--ink);
+  --primary: var(--accent);
+  --primary-foreground: #fffefa;
+  --secondary: var(--sage);
+  --secondary-foreground: var(--accent);
+  --muted-foreground: var(--muted);
+  --accent-foreground: #fffefa;
+  --destructive: var(--error);
+  --border: var(--line);
+  --input: #cbd2c7;
+  --ring: #729580;
+  --radius: 0.875rem;
+  --font-body: 'DM Sans Variable', 'Segoe UI', Arial, sans-serif;
+  --font-display: 'Fraunces Variable', Georgia, serif;
+  font-family: var(--font-body);
   font-size: 16px;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: #eef0e9;
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+  --font-sans: var(--font-body);
 }
