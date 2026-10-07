@@ -77,3 +77,15 @@ Filtrar por submitted_at, tema e nível; níveis diferentes geram séries separa
 Excluir conversa remove acesso a mensagens, materiais e chunks, limpa seleção, cancela jobs e marca ExamSource como indisponível, preservando provas. Excluir material remove arquivo/chunks/embedding e desabilita citações navegáveis; preservar somente nome/localizador histórico, enunciados e correções. Não usar texto do material excluído em novos prompts, inclusive histórico enviado ao chat: recompor contexto com fontes ativas e omitir mensagens fundamentadas exclusivamente na fonte removida. Excluir tentativa remove acesso a respostas, notas e seus agregados; não recriar tentativa para a mesma prova.
 
 Índices iniciais: owner/deleted_at/created_at, conversation/sequence, material/ordinal, exam/ordinal, attempt/question, owner/submitted_at, question/topic, operation/state/lease_until; GIN para texto. Banco usa chaves únicas para idempotência, revisões e tentativa. Índices vetoriais aproximados somente após medir necessidade.
+
+## Extensões persistidas — migrações 008–013
+
+- `ai_run_budget` e `ai_call_reservation` guardam teto, gasto/reserva e chamadas do ledger de ensaio; valores e preços históricos não são reiniciados na troca de modelo.
+- `conversation.skill_key`/`response_depth` e snapshots em `message` preservam método, versão e profundidade de cada turno; migration 009 tem defaults compatíveis. Catálogos são versionados no servidor.
+- `pdf_study`: um caderno por material, owner_id e FK composta com cascade; `editor_state` JSON validado e `revision` para concorrência otimista. Páginas originais imutáveis e páginas extras com UUID estável. Schemas de lessons existem, mas a integração persistente de aula está pendente em T101.
+- `pdf_study_operation`: chave `(material_id,operation_id)`, hash do request, revisão, before/after, espécie edit/tutor/undo/redo e resposta de replay; histórico editável limitado às últimas 30 ações. Migration 013 também limpa respostas antigas de replay.
+- `pdf_study_turn`: registro por material/explicação/página, autor, conteúdo, basis e IDs de páginas citadas. Perguntas/resumos do tutor também entram em `message`, que é o histórico canônico da conversa.
+- `message.pdf_material_id`/`pdf_page_id`/`pdf_explanation_id`: referências acrescentadas pela migration 012. Material purgado anula a referência, preservando a mensagem. Importação reorganiza a sequência existente; executar com aplicação parada e recarregar cursores.
+- `pdf_tutor_attempt`: proprietário, material anulável, operation_id e created_at para limite de 100 solicitações/24 h. Após migration 013 a FK anula somente material_id na purga, preservando a contagem; o worker limpa registros com 24 h.
+
+Perguntas PDF preservam propriedade e contexto da conversa; seleções/imagens do navegador não definem autorização. IndexedDB armazena operações pendentes por conta/material, sem equivaler a confirmação no banco. A exportação exige revisão confirmada e autorização atual. Compatibilidade e recuperação estão em [docs/pdf-study.md](../../docs/pdf-study.md).

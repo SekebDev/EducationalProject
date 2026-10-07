@@ -104,3 +104,20 @@ O usuário autorizou teto total de **US$ 0,20**. Durante uma coleta inicial, a l
 Todas as chamadas posteriores, incluindo coletas, tentativas malsucedidas e carga, compartilham um ledger de US$ 0,15. Ao encerrar: **US$ 0,121978 contabilizados**, zero reservado. Somado ao máximo desconhecido anterior, o gasto total conservador é **até US$ 0,171978**, abaixo de US$ 0,20. Nenhum desconto de cache foi usado. Relatório: `test-results/staging/budget-report.json`; cada carga real referencia o total compartilhado, sem inventar custo individual de uma rodada concorrente.
 
 Não houve publicação em produção. T054–T057 e T079 continuam parcialmente atendidas: desempenho real, qualidade/revisão humana, leitor de tela e S3 têm pendências concretas. Os instrumentos, staging, gates e revisão autorizada T067–T078/T080 foram executados; a próxima fase de convergência registra o trabalho restante.
+
+## Reconciliação e gates — 07/10/2026
+
+Documentação atualizada contra o código das features 001/002, landing e PDF. O estado e as lacunas são registrados em [convergence.md](convergence.md); T101–T102 deixam explícita a integração parcial das aulas por etapas. Nenhuma avaliação humana ou chamada paga foi realizada nesta revisão.
+
+O CI do commit bd31528 parou em formatação (24 arquivos). Após corrigir formatação, a conferência local encontrou regras de lint, tipos opcionais e divergência entre o schema de etapas do provider e o layout antigo do PDF. Foram corrigidos blocos explícitos, fronteiras de validação, interpretação ESM da web e fallback de focusRects. O layout agora aceita etapas estruturadas preservando todas as explicações e diagramas, além da compatibilidade dos testes/exportações do formato anterior. Placeholder de página digitalizada não gera linha textual inventada. Isso não implementa o endpoint de avanço ou aulas persistidas.
+
+| Verificação desta revisão | Resultado |
+| --- | --- |
+| ESLint completo | Aprovado após os ajustes; nenhuma supressão acrescentada |
+| TypeScript API/web, sem emissão | Aprovado com acesso às dependências fora do sandbox |
+| Vitest unit | 162 aprovados; três testes condicionados a banco foram omitidos localmente por ausência de TEST_DATABASE_URL |
+| Instrumentos de carga/score | Seis testes aprovados |
+| Runtime local | Node 22.23.2/pnpm 11.25.0; CLIs das dependências executados diretamente, não equivalem ao runtime canônico Node 24/pnpm 10 |
+| Integração/contratos/E2E/build locais | Não repetidos nesta sessão: Docker Desktop não está em execução e não há banco de teste local disponível |
+
+As primeiras tentativas no sandbox falharam por EPERM na resolução de dependências; a execução fora dessas restrições permitiu validar tipos e unidades. Evidência histórica de staging e testes de 01/10 permanece identificada por data e não é apresentada como rodada atual. O workflow remoto usa Node/pnpm fixados, migrações e PostgreSQL isolado para validar o conjunto antes do merge em dev.

@@ -210,6 +210,14 @@ export function validateStudyState(
   state: StudyEditorState,
   originals: StudyPage[],
 ): string | null {
+  const lessonError = validateStudyLessons(state);
+  if (lessonError) {
+    return lessonError;
+  }
+  return validateStudyPagesAndAnnotations(state, originals);
+}
+
+function validateStudyLessons(state: StudyEditorState): string | null {
   if (
     state.lessons?.some(
       (lesson) =>
@@ -226,6 +234,13 @@ export function validateStudyState(
   ) {
     return 'Aula de estudo não encontrada.';
   }
+  return null;
+}
+
+function validateStudyPagesAndAnnotations(
+  state: StudyEditorState,
+  originals: StudyPage[],
+): string | null {
   const ids = new Set(state.pages.map((page) => page.id));
   if (
     ids.size !== state.pages.length ||
@@ -281,7 +296,9 @@ export function visibleStudyState(state: StudyEditorState): StudyEditorState {
   const hiddenAnnotations = new Set<string>();
   const hiddenPages = new Set<string>();
   for (const lesson of state.lessons ?? []) {
-    if (lesson.completed) continue;
+    if (lesson.completed) {
+      continue;
+    }
     for (const step of lesson.steps.slice(lesson.currentStepIndex + 1)) {
       step.annotationIds.forEach((id) => hiddenAnnotations.add(id));
       step.pageIds.forEach((id) => hiddenPages.add(id));
@@ -289,8 +306,9 @@ export function visibleStudyState(state: StudyEditorState): StudyEditorState {
   }
   // Never hide a page containing a student edit or a previously revealed drawing.
   for (const annotation of state.annotations) {
-    if (!hiddenAnnotations.has(annotation.id))
+    if (!hiddenAnnotations.has(annotation.id)) {
       hiddenPages.delete(annotation.pageId);
+    }
   }
   return {
     ...state,

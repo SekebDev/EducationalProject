@@ -32,8 +32,9 @@ export function chunkSegments(
         text: segment.text.slice(start, end),
         locator: segment.locator,
       });
-      if (chunks.length > 2_000)
+      if (chunks.length > 2_000) {
         throw new ExtractionError('MATERIAL_CHUNK_LIMIT');
+      }
       start = end;
     }
   }

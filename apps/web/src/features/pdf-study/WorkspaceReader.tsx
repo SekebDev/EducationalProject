@@ -81,7 +81,7 @@ export function WorkspaceReader({ model }: { model: ReadyWorkspaceModel }) {
               materialId={model.materialId}
               page={page}
               annotations={visibleState.annotations}
-              focusRects={onLessonPage ? animation.step?.rects : []}
+              focusRects={onLessonPage ? (animation.step?.rects ?? []) : []}
               tool={model.tool}
               color={model.color}
               zoom={model.zoom}

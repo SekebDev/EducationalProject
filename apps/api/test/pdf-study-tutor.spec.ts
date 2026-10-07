@@ -3,15 +3,14 @@ import { describe, expect, it, vi, beforeEach } from 'vitest';
 import { studyEditorStateSchema, validateStudyState } from '@study/contracts';
 import type { StudyPage } from '@study/contracts';
 import { applyTutorPlan } from '../src/modules/pdf-study/tutor-layout.js';
+import type { FlatTutorPlan } from '../src/modules/pdf-study/tutor-layout.js';
+import { studyPageLines } from '../src/modules/pdf-study/pdf-lines.js';
 import {
   explainPdf,
   streamedAnswerPrefix,
   validateTutorPlan,
 } from '../src/modules/pdf-study/tutor.js';
-import type {
-  PdfTutorInput,
-  TutorPlan,
-} from '../src/modules/pdf-study/tutor.js';
+import type { PdfTutorInput } from '../src/modules/pdf-study/tutor.js';
 
 const sdk = vi.hoisted(() => ({ create: vi.fn() }));
 vi.mock('openai', () => ({
@@ -40,7 +39,7 @@ const block = {
   width: 220,
   height: 20,
 };
-const output = () => ({
+const flatOutput = () => ({
   answer: 'Uma explicação.',
   basis: 'source' as const,
   citedBlockIds: [block.id],
@@ -50,7 +49,28 @@ const output = () => ({
   needsStudyPage: true,
   title: 'Estudo',
 });
-const plan = (): TutorPlan => ({ ...output(), sourceBlocks: [block] });
+const plan = (): FlatTutorPlan => ({ ...flatOutput(), sourceBlocks: [block] });
+const output = () => ({
+  answer: 'Uma explicação.',
+  basis: 'source' as const,
+  citedBlockIds: [block.id],
+  steps: [
+    {
+      lineId: null as string | null,
+      explanation: 'Conceito explicado.',
+      basis: 'source' as const,
+      citedBlockIds: [block.id],
+      diagram: null,
+    },
+  ],
+  title: 'Estudo',
+});
+const streamedOutput = () => ({
+  ...output(),
+  steps: [
+    { ...output().steps[0]!, lineId: studyPageLines([block], null)[0]!.id },
+  ],
+});
 const input = (): PdfTutorInput => ({
   question: 'Explique',
   page: original,
@@ -99,13 +119,28 @@ describe('PDF tutor plan and layout', () => {
     ).toThrow('AI_CITATIONS_INVALID');
     expect(() =>
       validateTutorPlan(
-        { ...output(), shapes: [{ kind: 'arrow', blockId: 'fabricated' }] },
+        {
+          ...output(),
+          steps: [{ ...output().steps[0]!, citedBlockIds: ['fabricated'] }],
+        },
         [block],
       ),
     ).toThrow('AI_CITATIONS_INVALID');
     expect(() =>
       validateTutorPlan(
-        { ...output(), diagram: { nodes: ['a'], edges: [{ from: 0, to: 4 }] } },
+        {
+          ...output(),
+          steps: [
+            {
+              ...output().steps[0]!,
+              diagram: {
+                layout: 'flow',
+                nodes: ['a'],
+                edges: [{ from: 0, to: 4, label: null }],
+              },
+            },
+          ],
+        },
         [block],
       ),
     ).toThrow('AI_CITATIONS_INVALID');
@@ -196,7 +231,7 @@ describe('PDF tutor plan and layout', () => {
     ).toBe(true);
   });
   it('streams one structured Responses request and returns validated evidence', async () => {
-    const json = JSON.stringify(output());
+    const json = JSON.stringify(streamedOutput());
     sdk.create.mockResolvedValue(
       (async function* () {
         for (const part of [
@@ -224,6 +259,7 @@ describe('PDF tutor plan and layout', () => {
     const result = await explainPdf(input(), (delta) => deltas.push(delta));
     expect(deltas.join('')).toBe(output().answer);
     expect(result.sourceBlocks).toEqual([block]);
+    expect(result.steps[0]?.explanation).toBe('Conceito explicado.');
     expect(sdk.create).toHaveBeenCalledTimes(1);
     expect(sdk.create.mock.calls[0]?.[0]).toMatchObject({
       store: false,
@@ -231,6 +267,42 @@ describe('PDF tutor plan and layout', () => {
       tools: [],
       text: { format: { type: 'json_schema', strict: true } },
     });
+  });
+  it('preserves every structured step and diagram in the compatible export layout', () => {
+    const steps = ['Primeiro conceito.', 'Segundo conceito.'].map(
+      (explanation, index) => ({
+        lineId: `line-${index}`,
+        explanation,
+        basis: 'source' as const,
+        citedBlockIds: [block.id],
+        diagram: {
+          layout: 'flow' as const,
+          nodes: [`Causa ${index}`, `Efeito ${index}`],
+          edges: [{ from: 0, to: 1, label: null }],
+        },
+      }),
+    );
+    const result = applyTutorPlan(
+      { pages: [original], annotations: [] },
+      original.id,
+      null,
+      { ...output(), steps, sourceBlocks: [block], sourceLines: [] },
+      randomUUID(),
+    );
+    expect(validateStudyState(result.state, [original])).toBeNull();
+    const text = result.state.annotations
+      .map((annotation) => annotation.text)
+      .join('\n');
+    for (const [index, step] of steps.entries()) {
+      expect(text).toContain(step.explanation);
+      expect(text).toContain(`Causa ${index}`);
+      expect(text).toContain(`Efeito ${index}`);
+    }
+    expect(
+      result.state.annotations.filter(
+        (annotation) => annotation.kind === 'arrow',
+      ),
+    ).toHaveLength(2);
   });
   it('does not commit partial model output and has an explicit demo', async () => {
     sdk.create.mockResolvedValue(
@@ -263,7 +335,11 @@ describe('PDF tutor plan and layout', () => {
       height: 0,
     };
     const visualPlan = validateTutorPlan(
-      { ...output(), citedBlockIds: [visual.id], shapes: [] },
+      {
+        ...output(),
+        citedBlockIds: [visual.id],
+        steps: [{ ...output().steps[0]!, citedBlockIds: [visual.id] }],
+      },
       [visual],
     );
     const result = applyTutorPlan(
@@ -306,7 +382,10 @@ describe('PDF tutor plan and layout', () => {
               {
                 type: 'message',
                 content: [
-                  { type: 'output_text', text: JSON.stringify(output()) },
+                  {
+                    type: 'output_text',
+                    text: JSON.stringify(streamedOutput()),
+                  },
                 ],
               },
             ],

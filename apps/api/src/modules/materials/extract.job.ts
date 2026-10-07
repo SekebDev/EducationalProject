@@ -43,7 +43,9 @@ export function createExtractJobHandler(databaseUrl: string): JobHandler {
          AND o.lease_until>now() AND m.deleted_at IS NULL AND c.deleted_at IS NULL AND m.version=$4`,
         [lease.id, lease.ownerId, lease.fenceVersion, material.version],
       );
-      if (!active.rowCount) throw new Error('MATERIAL_UNAVAILABLE');
+      if (!active.rowCount) {
+        throw new Error('MATERIAL_UNAVAILABLE');
+      }
       embeddings.push(
         ...(await provider.embed(
           chunks.slice(start, start + 32).map((chunk) => chunk.text),

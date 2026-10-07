@@ -11,7 +11,9 @@ export class AuthRateLimit {
   assertAllowed(kind: 'login' | 'reset', ip: string, account: string): void {
     const now = Date.now();
     for (const [key, attempt] of this.attempts) {
-      if (attempt.expiresAt <= now) this.attempts.delete(key);
+      if (attempt.expiresAt <= now) {
+        this.attempts.delete(key);
+      }
     }
     if (this.attempts.size >= 20_000) {
       throw new PublicError(

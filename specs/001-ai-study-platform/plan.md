@@ -7,7 +7,7 @@
 
 Aplicação web em português para conversar com um professor de IA, estudar materiais, responder provas formativas e praticar dificuldades. Next.js apresenta as jornadas; NestJS concentra autorização, regras, persistência e OpenAI. PostgreSQL guarda dados relacionais, trechos vetoriais e fila de trabalhos. Arquivos ficam em armazenamento privado.
 
-O repositório contém a aplicação implementada e documentação. A evidência de verificação e as pendências externas estão em validation.md. O setup retornou `001-ai-study-platform`, mas `git branch --show-current` retornou `main`; nenhuma branch foi criada ou trocada.
+O repositório contém a aplicação e documentação. A evidência histórica está em validation.md; o estado reconciliado em 07/10/2026 está em convergence.md. A feature é integrada em `dev` pelo PR #3; `main` permanece a referência de produção.
 
 ## Technical Context
 
@@ -23,7 +23,7 @@ O repositório contém a aplicação implementada e documentação. A evidência
 
 **Project Type**: monorepo web e monólito modular com worker no mesmo pacote da API.
 
-**Performance Goals**: 20 estudantes simultâneos; p95 início de resposta do chat <=10 s, prova <=90 s, correção discursiva <=60 s; feedback objetivo <=2 s em 95% das confirmações. Metas ainda não medidas.
+**Performance Goals**: 20 estudantes simultâneos; p95 início de resposta do chat <=10 s, prova <=90 s, correção discursiva <=60 s; feedback objetivo <=2 s em 95% das confirmações. Ensaios fake e reais de 01/10 estão registrados em validation.md; a rodada real não aprovou SC-009. Nova medição completa continua em T054/T088.
 
 **Constraints**: 10–30 questões, quatro alternativas por objetiva, uma tentativa por prova, 1 ponto por questão; PDF textual/DOCX/TXT/MD <=20.000.000 bytes, dez materiais ativos por conversa; nenhum gabarito antecipado ou segredo no frontend; sem OCR, ferramentas autônomas, offline, turmas ou certificação.
 
@@ -64,7 +64,15 @@ Criação/confirmar/entregar/contestar/reavaliar usam chave de idempotência por
 
 ### IA e materiais
 
-Responses API, `store:false`, sem Conversations hospedadas ou ferramentas executáveis. Baseline econômico de avaliação `gpt-4.1-nano`, configurável por função; `text-embedding-3-small` para busca. Qualidade, custo e latência exigem ensaio, conforme [research.md](research.md).
+Responses API, `store:false`, sem Conversations hospedadas ou ferramentas executáveis. O padrão atual de texto é `gpt-6-luna`, configurável por função; `text-embedding-3-small` permanece para busca. `gpt-4.1-nano` identifica ensaios históricos, não a configuração atual. Preferências educacionais, profundidade e preservação do ledger são detalhadas na feature 002. Qualidade, custo e latência exigem ensaio, conforme [research.md](research.md).
+
+### Extensões implementadas
+
+`pdf-study` acrescenta leitor/anotações/exportação por material e usa a mesma conversa, storage e provider. PDF.js renderiza e extrai geometria; pdf-lib e fonte incorporada produzem a exportação. IndexedDB guarda operações ainda não confirmadas, sem tornar o produto offline. Migrações 010–013 introduzem caderno, operações, tentativas do tutor e referências no chat; modelo e rotas estão nos documentos de contratos.
+
+O provider do tutor retorna resumo e etapas validadas. A integração atual adapta essas etapas ao layout anterior, preservando explicações e diagramas em páginas extras. Persistência de aulas/progresso, endpoint de avanço e desenho por etapa permanecem em T101–T102; a existência dos componentes React não encerra essas tarefas.
+
+A landing usa Motion, CSS Modules, kit escolar e demonstração local sem chamar IA. `docs/landing-page-caderno.md` registra direção e verificações; `docs/caderno-school-assets.md` e o manifesto registram os recursos. A integração mantém `/cadastro` e `/entrar` como destinos.
 
 Busca lexical/vetorial filtra proprietário e fontes selecionadas antes de recuperar. PDF mantém páginas, DOCX parágrafos, TXT linhas. Servidor valida localizadores; suporte semântico exige revisão humana. Prova com fontes nunca completa silenciosamente com conhecimento geral. Personalidade não muda rubricas.
 

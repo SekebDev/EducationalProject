@@ -55,12 +55,16 @@ export class DeletionPurger {
         }
         purged++;
       } catch (error) {
-        if (!selected) throw error;
+        if (!selected) {
+          throw error;
+        }
         failed.push(selected);
         firstError ??= error;
       }
     }
-    if (firstError) throw firstError;
+    if (firstError) {
+      throw firstError;
+    }
     return purged;
   }
 

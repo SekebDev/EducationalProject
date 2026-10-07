@@ -29,7 +29,9 @@ Substitua `SESSION_SECRET` em `.env` por valor aleatório com pelo menos 32 cara
 
 O fluxo inclui cadastro, recuperação de senha, conversas com três personalidades, PDF/DOCX/TXT como fontes, prova de 10 a 30 questões, respostas objetivas e discursivas, contestação, evolução por tema/período/nível e prática dirigida. Comece uma conversa, faça uma pergunta e use “Criar prova desta conversa”. O modo local `AI_PROVIDER=fake` exercita os fluxos com conteúdo de demonstração: ele não comprova qualidade pedagógica.
 
-Dentro de cada conversa, **Estudar PDF** abre um material anexado com anotações, páginas adicionais, tutor visual com mascote e exportação de PDF completo. As perguntas usam o mesmo chat e seu contexto. Consulte [Caderno de PDF](docs/pdf-study.md) para configuração, uso e limites.
+Dentro de cada conversa, **Estudar PDF** abre um material anexado com anotações, páginas adicionais, tutor visual e exportação de PDF completo. As perguntas usam o mesmo chat e seu contexto. A integração da aula por etapas com o mascote ainda está parcial. Consulte [Caderno de PDF](docs/pdf-study.md) para configuração, uso e limites.
+
+A entrada pública usa a identidade Caderno e uma demonstração identificada como simulada. As preferências de método e profundidade estão documentadas em [Skills educacionais](docs/educational-skills.md). O [estado da convergência](specs/001-ai-study-platform/convergence.md) distingue o que foi implementado das pendências técnicas e dos critérios de aceite ainda sem comprovação.
 
 Os comandos `pnpm format:check`, `pnpm lint`, `pnpm typecheck`, `pnpm test:unit`, `pnpm test:integration`, `pnpm test:contract`, `pnpm test:e2e` e `pnpm build` verificam o código. Configure `TEST_DATABASE_URL` para um banco isolado, por exemplo `study_test`. A suíte E2E inicia API e web nas portas 3101/3100 e usa armazenamento separado. Consulte a [validação](specs/001-ai-study-platform/validation.md), a [operação](docs/operations.md) e as tarefas.
 

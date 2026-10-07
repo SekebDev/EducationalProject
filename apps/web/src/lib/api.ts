@@ -21,7 +21,9 @@ let memoryEpoch = 'initial';
 let listening = false;
 
 function accountEpoch(): string {
-  if (typeof window === 'undefined') return memoryEpoch;
+  if (typeof window === 'undefined') {
+    return memoryEpoch;
+  }
   if (!listening) {
     listening = true;
     window.addEventListener('storage', (event) => {
@@ -141,7 +143,9 @@ export async function api<T>(
       '/auth/logout',
       '/auth/password-reset/confirm',
     ].includes(path);
-  if (changesAccount) invalidateAccount();
+  if (changesAccount) {
+    invalidateAccount();
+  }
   const epoch = accountEpoch();
   const headers = new Headers();
   if (method !== 'GET') {
@@ -185,7 +189,9 @@ export async function api<T>(
   if (!response.ok) {
     throw await responseError(response);
   }
-  if (changesAccount) invalidateAccount();
+  if (changesAccount) {
+    invalidateAccount();
+  }
   const responseEpoch = accountEpoch();
   if (response.status === 204) {
     return undefined as T;
@@ -221,7 +227,9 @@ export async function apiBlob(path: string): Promise<Blob> {
     cache: 'no-store',
   });
   assertAccount(epoch);
-  if (!response.ok) throw await responseError(response);
+  if (!response.ok) {
+    throw await responseError(response);
+  }
   const blob = await response.blob();
   assertAccount(epoch);
   return blob;

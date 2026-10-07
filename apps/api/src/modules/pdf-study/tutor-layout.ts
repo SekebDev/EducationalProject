@@ -8,6 +8,22 @@ import type {
 } from '@study/contracts';
 import type { TutorPlan } from './tutor.js';
 
+/** Stored/export fixtures from the first PDF editor use the flat layout contract. */
+export type FlatTutorPlan = {
+  answer: string;
+  title: string;
+  basis: 'source' | 'general' | 'unsupported';
+  citedBlockIds: string[];
+  sourceBlocks: TutorPlan['sourceBlocks'];
+  notes: Array<{ text: string }>;
+  shapes: Array<{ kind: 'ellipse' | 'arrow'; blockId: string }>;
+  diagram: {
+    nodes: string[];
+    edges: Array<{ from: number; to: number }>;
+  } | null;
+  needsStudyPage: boolean;
+};
+
 const COLOR = '#326a53' as const;
 const FONT = 14;
 const LINE = 19.6;
@@ -47,8 +63,56 @@ function insertionIndex(pages: StudyPage[], source: StudyPage): number {
 export function applyTutorPlan(
   current: StudyEditorState,
   pageId: string,
+  selection: { text: string; rects: StudyRect[] } | null,
+  plan: TutorPlan | FlatTutorPlan,
+  explanationId: string,
+): { state: StudyEditorState; annotationIds: string[]; pageIds: string[] } {
+  if (!('steps' in plan)) {
+    return applyFlatTutorPlan(current, pageId, selection, plan, explanationId);
+  }
+  // Until the staged lesson UI is integrated, preserve every validated step and
+  // diagram in the existing editable/exportable notebook format.
+  let state = current;
+  const annotationIds: string[] = [];
+  const pageIds: string[] = [];
+  for (const [index, step] of plan.steps.entries()) {
+    const applied = applyFlatTutorPlan(
+      state,
+      pageId,
+      selection,
+      {
+        answer:
+          index === 0
+            ? `${plan.answer}\n\n${step.explanation}`
+            : step.explanation,
+        title: plan.title,
+        basis: step.basis,
+        citedBlockIds: [
+          ...new Set([
+            ...(index === 0 ? plan.citedBlockIds : []),
+            ...step.citedBlockIds,
+          ]),
+        ],
+        sourceBlocks: plan.sourceBlocks,
+        notes: [],
+        shapes: [],
+        diagram: step.diagram,
+        needsStudyPage: true,
+      },
+      explanationId,
+    );
+    state = applied.state;
+    annotationIds.push(...applied.annotationIds);
+    pageIds.push(...applied.pageIds);
+  }
+  return { state, annotationIds, pageIds };
+}
+
+function applyFlatTutorPlan(
+  current: StudyEditorState,
+  pageId: string,
   _selection: { text: string; rects: StudyRect[] } | null,
-  plan: TutorPlan,
+  plan: FlatTutorPlan,
   explanationId: string,
 ): { state: StudyEditorState; annotationIds: string[]; pageIds: string[] } {
   const target = current.pages.find((page) => page.id === pageId);

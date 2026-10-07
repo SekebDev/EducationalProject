@@ -18,7 +18,7 @@ export function studyPageLines(
   const groups: StudyBlock[][] = [];
   for (const block of [...blocks].sort((a, b) => a.y - b.y || a.x - b.x)) {
     if (block.id.endsWith(':visual')) {
-      groups.push([block]);
+      // An image placeholder has no verified text or geometry to anchor a line.
       continue;
     }
     const matching = groups.findLast((group) => {
@@ -38,8 +38,11 @@ export function studyPageLines(
         gap <= Math.max(previous.height, block.height) * 4
       );
     });
-    if (matching) matching.push(block);
-    else groups.push([block]);
+    if (matching) {
+      matching.push(block);
+    } else {
+      groups.push([block]);
+    }
   }
   const lines = groups
     .sort((a, b) => a[0]!.y - b[0]!.y || a[0]!.x - b[0]!.x)

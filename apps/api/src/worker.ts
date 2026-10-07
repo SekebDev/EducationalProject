@@ -23,7 +23,9 @@ await dispatcher.start({
 const purger = new DeletionPurger(config.databaseUrl);
 let purging = false;
 const purgeTimer = setInterval(() => {
-  if (purging) return;
+  if (purging) {
+    return;
+  }
   purging = true;
   void purger
     .purgeDue()

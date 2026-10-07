@@ -1,12 +1,12 @@
 # Feature Specification: Plataforma de estudos com professor de IA
 
-**Feature Branch**: `main` (branch atual; nenhuma branch criada por hook)
+**Feature Branch**: `feat/frontend-chat-docker`; integração em `dev`, conforme o fluxo do repositório.
 
 **Created**: 2026-09-28
 
-**Status**: Draft — validada para planejamento
+**Status**: Implementação disponível para integração; aceite completo pendente.
 
-**Updated**: 2026-09-28 — stack solicitada e critérios de design incorporados.
+**Updated**: 2026-10-07 — documentação reconciliada com a implementação, preservando os critérios de aceite pendentes.
 
 **Input**: Site para estudantes conversarem com um professor de IA com personalidade escolhida,
 enviarem materiais de referência, criarem provas de 10 a 30 questões objetivas e discursivas,
@@ -370,3 +370,14 @@ transparente do professor e das correções como IA exigida em FR-021.
 
 O planejamento deve transformar TC-001 a TC-005 e UX-001 a UX-006 em decisões e tarefas
 verificáveis, respeitando a stack aprovada: NestJS, Next.js, API OpenAI e PostgreSQL.
+
+## Extensões incorporadas e estado atual — 07/10/2026
+
+As cinco histórias e seus critérios continuam obrigatórios. A presença de código ou um checkbox concluído não comprova qualidade pedagógica, desempenho real ou aceite humano. O relatório [convergence.md](convergence.md) relaciona implementação, evidência e pendências.
+
+- **EXT-001 — Métodos educacionais**: explicar, praticar, revisar e flashcards, com profundidade por conversa e snapshots imutáveis por turno, são especificados separadamente em [feature 002](../002-educational-skills/spec.md). Personalidade, fontes e regras de nota continuam independentes desses métodos.
+- **EXT-002 — Entrada Caderno**: a rota pública `/` apresenta a landing escolar, demonstração identificada como simulada e entrada/cadastro. Deve respeitar teclado, largura móvel e movimento reduzido, sem apresentar indicadores ilustrativos como desempenho real. Direção, assets e verificações: [landing-page-caderno.md](../../docs/landing-page-caderno.md).
+- **EXT-003 — Caderno de PDF**: material anexado à conversa pode ser aberto no leitor, receber anotações e páginas extras, desfazer/refazer, recuperar rascunhos e ser exportado sem regravar o original. A autorização continua por conta/material e perguntas usam o histórico canônico do chat. Critérios: salvar com revisão e UUID de operação, rejeitar alteração de páginas originais, revogar acesso após exclusão e exportar uma revisão confirmada. Uso e limites: [pdf-study.md](../../docs/pdf-study.md).
+- **EXT-004 — Aula por etapas no PDF**: o comportamento pretendido de sublinhar uma linha verificada, explicar junto ao mascote e aguardar **Entendi**, persistindo progresso, ainda exige integração do backend. Diagramas pretendidos são objetos com rótulos e conexões sem copiar prosa para o documento. Contratos e componentes existentes representam implementação parcial, rastreada em T101–T102.
+
+Markdown também é aceito como material textual, com os mesmos limites de tamanho e propriedade de TXT. PDFs escaneados podem ser consultados por imagem no tutor; seleção textual e recuperação de trechos continuam dependentes de texto extraível, sem OCR. Isso amplia o leitor visual, sem alterar o aceite de fontes textuais de FR-004/FR-006.

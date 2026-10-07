@@ -59,10 +59,7 @@ export function usePdfWorkspace(
   const page =
     visibleState?.pages.find((item) => item.id === pageId) ??
     visibleState?.pages[0];
-  const index = Math.max(
-    0,
-    visibleState?.pages.findIndex((item) => item.id === page?.id) ?? 0,
-  );
+  const index = visiblePageIndex(visibleState, page);
   const source =
     page?.kind === 'original'
       ? page
@@ -332,6 +329,15 @@ export function usePdfWorkspace(
   };
 }
 export type PdfWorkspaceModel = ReturnType<typeof usePdfWorkspace>;
+function visiblePageIndex(
+  state: StudyEditorState | null,
+  page: StudyPage | undefined,
+) {
+  return Math.max(
+    0,
+    state?.pages.findIndex((item) => item.id === page?.id) ?? 0,
+  );
+}
 export type ReadyWorkspaceModel = PdfWorkspaceModel & {
   study: PdfStudy;
   state: StudyEditorState;
