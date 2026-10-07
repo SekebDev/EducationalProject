@@ -1,3 +1,12 @@
+import type {
+  CreateConversationDto,
+  UpdateConversationDto,
+  SendMessageDto,
+} from './dto/conversations.dto.js';
+import type {
+  ConversationEntity,
+  MessageEntity,
+} from './entities/conversations.entity.js';
 import { randomUUID } from 'node:crypto';
 import { Injectable } from '@nestjs/common';
 import { readConfig } from '../../infrastructure/config.js';
@@ -8,24 +17,8 @@ import { withIdempotency } from '../../infrastructure/http/idempotency.js';
 import { OperationRepository } from '../../infrastructure/jobs/operations.js';
 import { PERSONALITY_CATALOG_VERSION } from './personalities.js';
 import type { PersonalityKey } from './personalities.js';
-
-type ConversationRow = {
-  id: string;
-  title: string;
-  personality_key: PersonalityKey;
-  version: number;
-  created_at: Date;
-};
-type MessageRow = {
-  id: string;
-  sequence: number;
-  role: 'user' | 'assistant';
-  content: string;
-  state: string;
-  personality_snapshot: PersonalityKey;
-  references_json: unknown;
-  operation_id: string | null;
-};
+import type { EducationalSkill, ResponseDepth } from '@study/contracts';
+import { EDUCATIONAL_SKILL_VERSION } from './educational-skills.js';
 
 @Injectable()
 export class ConversationsService {
@@ -34,18 +27,20 @@ export class ConversationsService {
     readConfig(process.env).databaseUrl,
   );
 
-  async create(
-    ownerId: string,
-    key: string,
-    input: { title?: string | undefined; personality: PersonalityKey },
-  ) {
+  async create(ownerId: string, key: string, input: CreateConversationDto) {
     const result = await withIdempotency(
       this.pool,
       { ownerId, route: 'POST /conversations', key, body: input },
       async (client) => {
         const created = await client.query<{ id: string }>(
-          'INSERT INTO conversation(owner_id,title,personality_key) VALUES ($1,$2,$3) RETURNING id',
-          [ownerId, input.title?.trim() || 'Nova conversa', input.personality],
+          'INSERT INTO conversation(owner_id,title,personality_key,skill_key,response_depth) VALUES ($1,$2,$3,$4,$5) RETURNING id',
+          [
+            ownerId,
+            input.title?.trim() || 'Nova conversa',
+            input.personality,
+            input.skill ?? 'explicar',
+            input.responseDepth ?? 'aprofundada',
+          ],
         );
         const id = created.rows[0]?.id;
         if (!id) {
@@ -65,8 +60,8 @@ export class ConversationsService {
   }
 
   async get(ownerId: string, id: string) {
-    const result = await this.pool.query<ConversationRow>(
-      'SELECT id,title,personality_key,version,created_at FROM conversation WHERE owner_id=$1 AND id=$2 AND deleted_at IS NULL',
+    const result = await this.pool.query<ConversationEntity>(
+      'SELECT id,title,personality_key,skill_key,response_depth,version,created_at FROM conversation WHERE owner_id=$1 AND id=$2 AND deleted_at IS NULL',
       [ownerId, id],
     );
     const row = result.rows[0];
@@ -77,6 +72,8 @@ export class ConversationsService {
       id: row.id,
       title: row.title,
       personality: row.personality_key,
+      skill: row.skill_key,
+      responseDepth: row.response_depth,
       version: row.version,
       createdAt: row.created_at,
     };
@@ -102,8 +99,8 @@ export class ConversationsService {
         throw new PublicError(400, 'CURSOR_INVALID', 'Página inválida.');
       }
     }
-    const result = await this.pool.query<ConversationRow>(
-      `SELECT id,title,personality_key,version,created_at FROM conversation
+    const result = await this.pool.query<ConversationEntity>(
+      `SELECT id,title,personality_key,skill_key,response_depth,version,created_at FROM conversation
        WHERE owner_id=$1 AND deleted_at IS NULL AND ($2::timestamptz IS NULL OR (created_at,id)<($2::timestamptz,$3::uuid))
        ORDER BY created_at DESC,id DESC LIMIT 21`,
       [ownerId, beforeDate, beforeId],
@@ -115,6 +112,8 @@ export class ConversationsService {
         id: row.id,
         title: row.title,
         personality: row.personality_key,
+        skill: row.skill_key,
+        responseDepth: row.response_depth,
         version: row.version,
         createdAt: row.created_at,
       })),
@@ -130,17 +129,9 @@ export class ConversationsService {
     };
   }
 
-  async update(
-    ownerId: string,
-    id: string,
-    input: {
-      title?: string | undefined;
-      personality?: PersonalityKey | undefined;
-      version: number;
-    },
-  ) {
+  async update(ownerId: string, id: string, input: UpdateConversationDto) {
     const result = await this.pool.query(
-      `UPDATE conversation SET title=COALESCE($4,title),personality_key=COALESCE($5,personality_key),version=version+1
+      `UPDATE conversation SET title=COALESCE($4,title),personality_key=COALESCE($5,personality_key),skill_key=COALESCE($6,skill_key),response_depth=COALESCE($7,response_depth),version=version+1
        WHERE owner_id=$1 AND id=$2 AND version=$3 AND deleted_at IS NULL RETURNING id`,
       [
         ownerId,
@@ -148,6 +139,8 @@ export class ConversationsService {
         input.version,
         input.title?.trim() ?? null,
         input.personality ?? null,
+        input.skill ?? null,
+        input.responseDepth ?? null,
       ],
     );
     if (result.rowCount === 0) {
@@ -201,8 +194,8 @@ export class ConversationsService {
 
   async messages(ownerId: string, conversationId: string, after = 0) {
     await this.get(ownerId, conversationId);
-    const result = await this.pool.query<MessageRow>(
-      `SELECT m.id,m.sequence,m.role,m.content,m.state,m.personality_snapshot,m.references_json,o.id AS operation_id FROM message m
+    const result = await this.pool.query<MessageEntity>(
+      `SELECT m.id,m.sequence,m.role,m.content,m.state,m.personality_snapshot,m.skill_snapshot,m.skill_version_snapshot,m.response_depth_snapshot,m.references_json,m.pdf_material_id,m.pdf_page_id,m.pdf_explanation_id,o.id AS operation_id FROM message m
        LEFT JOIN operation o ON o.resource_id=m.id AND o.kind='answer-chat' AND o.owner_id=m.owner_id
        WHERE m.owner_id=$1 AND m.conversation_id=$2 AND m.sequence>$3 ORDER BY m.sequence LIMIT 101`,
       [ownerId, conversationId, after],
@@ -236,6 +229,9 @@ export class ConversationsService {
         content: row.content,
         state: row.state,
         personality: row.personality_snapshot,
+        skill: row.skill_snapshot,
+        skillVersion: row.skill_version_snapshot,
+        responseDepth: row.response_depth_snapshot,
         references: Array.isArray(row.references_json)
           ? row.references_json.map(
               (reference: {
@@ -251,6 +247,15 @@ export class ConversationsService {
           : [],
         aiGenerated: row.role === 'assistant',
         operationId: row.operation_id,
+        ...(row.pdf_material_id && row.pdf_page_id && row.pdf_explanation_id
+          ? {
+              pdfContext: {
+                materialId: row.pdf_material_id,
+                pageId: row.pdf_page_id,
+                explanationId: row.pdf_explanation_id,
+              },
+            }
+          : {}),
       })),
       nextCursor:
         result.rows.length > 100 ? String(rows.at(-1)?.sequence) : null,
@@ -261,7 +266,7 @@ export class ConversationsService {
     ownerId: string,
     conversationId: string,
     key: string,
-    input: { content: string; conversationVersion: number },
+    input: SendMessageDto,
   ) {
     const result = await withIdempotency(
       this.pool,
@@ -275,13 +280,26 @@ export class ConversationsService {
         const conversation = await client.query<{
           version: number;
           personality_key: PersonalityKey;
+          skill_key: EducationalSkill;
+          response_depth: ResponseDepth;
         }>(
-          'SELECT version,personality_key FROM conversation WHERE owner_id=$1 AND id=$2 AND deleted_at IS NULL FOR UPDATE',
+          'SELECT version,personality_key,skill_key,response_depth FROM conversation WHERE owner_id=$1 AND id=$2 AND deleted_at IS NULL FOR UPDATE',
           [ownerId, conversationId],
         );
         const current = conversation.rows[0];
         if (!current) {
           throw new PublicError(404, 'NOT_FOUND', 'Conversa não encontrada.');
+        }
+        const turnLock = await client.query<{ locked: boolean }>(
+          'SELECT pg_try_advisory_xact_lock(hashtextextended($1,0)) AS locked',
+          [`conversation-turn:${ownerId}:${conversationId}`],
+        );
+        if (!turnLock.rows[0]!.locked) {
+          throw new PublicError(
+            409,
+            'TURN_IN_PROGRESS',
+            'A explicação desta conversa ainda está em andamento.',
+          );
         }
         if (current.version !== input.conversationVersion) {
           throw new PublicError(
@@ -316,8 +334,8 @@ export class ConversationsService {
         const sourceSnapshot = JSON.stringify(selected.rows);
         const turnId = randomUUID();
         await client.query(
-          `INSERT INTO message(owner_id,conversation_id,sequence,role,content,state,turn_id,personality_snapshot,personality_version_snapshot,source_snapshot)
-          VALUES ($1,$2,$3,'user',$4,'completed',$5,$6,$7,$8::jsonb)`,
+          `INSERT INTO message(owner_id,conversation_id,sequence,role,content,state,turn_id,personality_snapshot,personality_version_snapshot,source_snapshot,skill_snapshot,skill_version_snapshot,response_depth_snapshot)
+          VALUES ($1,$2,$3,'user',$4,'completed',$5,$6,$7,$8::jsonb,$9,$10,$11)`,
           [
             ownerId,
             conversationId,
@@ -327,11 +345,14 @@ export class ConversationsService {
             current.personality_key,
             PERSONALITY_CATALOG_VERSION,
             sourceSnapshot,
+            current.skill_key,
+            EDUCATIONAL_SKILL_VERSION,
+            current.response_depth,
           ],
         );
         const assistant = await client.query<{ id: string }>(
-          `INSERT INTO message(owner_id,conversation_id,sequence,role,state,turn_id,personality_snapshot,personality_version_snapshot,source_snapshot)
-          VALUES ($1,$2,$3,'assistant','queued',$4,$5,$6,$7::jsonb) RETURNING id`,
+          `INSERT INTO message(owner_id,conversation_id,sequence,role,state,turn_id,personality_snapshot,personality_version_snapshot,source_snapshot,skill_snapshot,skill_version_snapshot,response_depth_snapshot)
+          VALUES ($1,$2,$3,'assistant','queued',$4,$5,$6,$7::jsonb,$8,$9,$10) RETURNING id`,
           [
             ownerId,
             conversationId,
@@ -340,6 +361,9 @@ export class ConversationsService {
             current.personality_key,
             PERSONALITY_CATALOG_VERSION,
             sourceSnapshot,
+            current.skill_key,
+            EDUCATIONAL_SKILL_VERSION,
+            current.response_depth,
           ],
         );
         const assistantId = assistant.rows[0]?.id;
@@ -374,8 +398,11 @@ export class ConversationsService {
       sequence: number;
       content: string;
       personality_snapshot: PersonalityKey;
+      skill_snapshot: EducationalSkill;
+      skill_version_snapshot: number;
+      response_depth_snapshot: ResponseDepth;
     }>(
-      `SELECT o.id,m.id AS user_id,m.sequence,m.content,m.personality_snapshot
+      `SELECT o.id,m.id AS user_id,m.sequence,m.content,m.personality_snapshot,m.skill_snapshot,m.skill_version_snapshot,m.response_depth_snapshot
        FROM operation o JOIN message assistant ON assistant.id=o.resource_id
        JOIN message m ON m.conversation_id=assistant.conversation_id AND m.turn_id=assistant.turn_id AND m.role='user'
        WHERE o.owner_id=$1 AND o.kind=$2 AND o.resource_id=$3`,
@@ -393,6 +420,9 @@ export class ConversationsService {
         content: row.content,
         state: 'completed' as const,
         personality: row.personality_snapshot,
+        skill: row.skill_snapshot,
+        skillVersion: row.skill_version_snapshot,
+        responseDepth: row.response_depth_snapshot,
         references: [],
         aiGenerated: false,
       },

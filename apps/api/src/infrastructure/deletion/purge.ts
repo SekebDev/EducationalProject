@@ -24,30 +24,46 @@ export class DeletionPurger {
       throw new RangeError('Janela inválida');
     }
     let purged = 0;
-    for (let index = 0; index < 25; index++) {
-      const processed = await transaction(this.pool, async (client) => {
-        const due = await client.query<RecordRow>(
-          `SELECT resource_type,resource_id,owner_id FROM deletion_record
+    const failed: string[] = [];
+    let firstError: unknown;
+    const deadline = Date.now() + 50_000;
+    for (let index = 0; index < 500 && Date.now() < deadline; index++) {
+      let selected: string | undefined;
+      try {
+        const processed = await transaction(this.pool, async (client) => {
+          const due = await client.query<RecordRow>(
+            `SELECT resource_type,resource_id,owner_id FROM deletion_record
            WHERE purge_state='pending' AND deleted_at <= now()-($1::double precision * interval '1 hour')
-           ORDER BY CASE resource_type WHEN 'material' THEN 0 WHEN 'attempt' THEN 1 WHEN 'exam' THEN 2 ELSE 3 END,
-             deleted_at,resource_id LIMIT 1 FOR UPDATE SKIP LOCKED`,
-          [hours],
-        );
-        const row = due.rows[0];
-        if (!row) {
-          return false;
+           AND (resource_type || ':' || resource_id::text) <> ALL($2::text[])
+           ORDER BY deleted_at,resource_id LIMIT 1 FOR UPDATE SKIP LOCKED`,
+            [hours, failed],
+          );
+          const row = due.rows[0];
+          if (!row) {
+            return false;
+          }
+          selected = `${row.resource_type}:${row.resource_id}`;
+          await this.purgeRecord(client, row);
+          await client.query(
+            "UPDATE deletion_record SET purge_state='purged',purged_at=now() WHERE resource_type=$1 AND resource_id=$2",
+            [row.resource_type, row.resource_id],
+          );
+          return true;
+        });
+        if (!processed) {
+          break;
         }
-        await this.purgeRecord(client, row);
-        await client.query(
-          "UPDATE deletion_record SET purge_state='purged',purged_at=now() WHERE resource_type=$1 AND resource_id=$2",
-          [row.resource_type, row.resource_id],
-        );
-        return true;
-      });
-      if (!processed) {
-        break;
+        purged++;
+      } catch (error) {
+        if (!selected) {
+          throw error;
+        }
+        failed.push(selected);
+        firstError ??= error;
       }
-      purged++;
+    }
+    if (firstError) {
+      throw firstError;
     }
     return purged;
   }
@@ -61,6 +77,12 @@ export class DeletionPurger {
       [days],
     );
     return result.rowCount ?? 0;
+  }
+
+  async pruneTutorAttempts(): Promise<void> {
+    await this.pool.query(
+      "DELETE FROM pdf_tutor_attempt WHERE created_at <= now()-interval '24 hours'",
+    );
   }
 
   async close() {
@@ -156,12 +178,24 @@ export class DeletionPurger {
       if (!active.rowCount) {
         return;
       }
-      const remaining = await client.query(
-        'SELECT 1 FROM material WHERE owner_id=$1 AND conversation_id=$2 LIMIT 1',
+      const remaining = await client.query<{ id: string }>(
+        'SELECT id FROM material WHERE owner_id=$1 AND conversation_id=$2',
         [ownerId, id],
       );
-      if (remaining.rowCount) {
-        throw new Error('MATERIAL_PURGE_PENDING');
+      for (const material of remaining.rows) {
+        await client.query(
+          'UPDATE material SET deleted_at=coalesce(deleted_at,now()) WHERE owner_id=$1 AND id=$2',
+          [ownerId, material.id],
+        );
+        await this.purgeRecord(client, {
+          owner_id: ownerId,
+          resource_type: 'material',
+          resource_id: material.id,
+        });
+        await client.query(
+          "UPDATE deletion_record SET purge_state='purged',purged_at=now() WHERE resource_type='material' AND resource_id=$1",
+          [material.id],
+        );
       }
       await client.query(
         'UPDATE exam SET conversation_id=NULL,context_snapshot=NULL WHERE owner_id=$1 AND conversation_id=$2',

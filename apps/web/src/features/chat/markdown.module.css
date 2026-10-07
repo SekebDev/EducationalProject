@@ -1,0 +1,135 @@
+.codeBlock {
+  margin: 22px 0;
+  overflow: hidden;
+  border: 1px solid #dce2d6;
+  border-radius: 14px;
+  background: #f4f5ee;
+  min-width: 0;
+}
+.codeToolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 8px 12px;
+  border-bottom: 1px solid #dce2d6;
+  color: #4d6254;
+  font-size: 0.78rem;
+}
+.codeToolbar > span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.codeToolbar button {
+  color: #405d4b;
+  height: 32px;
+  min-height: 32px;
+  font-size: 0.75rem;
+  gap: 7px;
+}
+.codeToolbar button[aria-pressed='true'] {
+  background: #dce8d6;
+  color: #173d32;
+}
+.viewSwitch {
+  display: flex;
+  gap: 3px;
+}
+.codeBlock.codeBlock pre {
+  margin: 0;
+  padding: 18px;
+  border: 0;
+  background: #f9faf5;
+  border-radius: 0;
+  overflow: auto;
+  max-width: 100%;
+  white-space: pre;
+  font:
+    0.84rem/1.75 Consolas,
+    'Courier New',
+    monospace;
+  color: #233b2e;
+  tab-size: 2;
+}
+.codeBlock.codeBlock pre code {
+  background: none;
+  padding: 0;
+  font: inherit;
+  color: inherit;
+  border: 0;
+  white-space: inherit;
+}
+.codeBlock :global(.hljs-keyword),
+.codeBlock :global(.hljs-selector-tag),
+.codeBlock :global(.hljs-literal) {
+  color: #754b9a;
+}
+.codeBlock :global(.hljs-string),
+.codeBlock :global(.hljs-title),
+.codeBlock :global(.hljs-attr) {
+  color: #24633d;
+}
+.codeBlock :global(.hljs-comment) {
+  color: #657063;
+  font-style: italic;
+}
+.codeBlock :global(.hljs-number),
+.codeBlock :global(.hljs-built_in) {
+  color: #925016;
+}
+.codeError,
+.diagramNotice {
+  padding: 14px 18px;
+  margin: 0;
+  font-size: 0.85rem;
+  color: #52675a;
+}
+.diagramBody {
+  position: relative;
+  overflow-x: auto;
+  background: #fffefa;
+  min-height: 80px;
+}
+.diagramImage {
+  display: block;
+  width: 100%;
+  min-width: 560px;
+  max-height: 650px;
+  object-fit: contain;
+  padding: 24px 16px;
+}
+.renderHost {
+  position: absolute;
+  inset: 0;
+  visibility: hidden;
+  pointer-events: none;
+  overflow: hidden;
+}
+.heading1.heading1 {
+  font-size: clamp(1.55rem, 2.4vw, 1.95rem);
+  line-height: 1.3;
+  letter-spacing: -0.025em;
+  margin: 28px 0 14px;
+}
+.heading2.heading2 {
+  font-size: clamp(1.25rem, 1.8vw, 1.5rem);
+  line-height: 1.4;
+  margin: 24px 0 12px;
+}
+.heading3.heading3 {
+  font-size: 1.1rem;
+  line-height: 1.45;
+  margin: 22px 0 10px;
+}
+@media (max-width: 680px) {
+  .codeToolbar {
+    padding: 8px;
+  }
+  .codeBlock.codeBlock pre {
+    padding: 14px;
+    font-size: 0.78rem;
+  }
+  .diagramImage {
+    padding: 18px 8px;
+  }
+}

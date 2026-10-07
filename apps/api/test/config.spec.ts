@@ -11,6 +11,37 @@ const valid = {
 };
 
 describe('readConfig', () => {
+  it('validates an explicit list of additional origins without wildcards or paths', () => {
+    expect(readConfig(valid).additionalAppOrigins).toEqual([]);
+    expect(
+      readConfig({
+        ...valid,
+        APP_ADDITIONAL_ORIGINS:
+          ' http://127.0.0.1:3200, https://study.example ',
+      }).additionalAppOrigins,
+    ).toEqual(['http://127.0.0.1:3200', 'https://study.example']);
+    for (const origin of [
+      '*',
+      'http://localhost:3200/path',
+      'http://localhost:3200/',
+      'https://user:password@study.example',
+      'file:///tmp',
+    ]) {
+      expect(() =>
+        readConfig({ ...valid, APP_ADDITIONAL_ORIGINS: origin }),
+      ).toThrow('APP_ADDITIONAL_ORIGINS');
+    }
+  });
+  it('keeps local development private and permits the Docker bind host', () => {
+    expect(readConfig(valid).apiHost).toBe('127.0.0.1');
+    expect(readConfig({ ...valid, API_HOST: '0.0.0.0' }).apiHost).toBe(
+      '0.0.0.0',
+    );
+    expect(() => readConfig({ ...valid, API_HOST: 'example.com' })).toThrow(
+      'API_HOST',
+    );
+  });
+
   it('rejects fake AI in production without exposing secrets', () => {
     expect(() =>
       readConfig({ ...valid, NODE_ENV: 'production', AI_PROVIDER: 'fake' }),

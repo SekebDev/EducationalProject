@@ -6,15 +6,38 @@ import type { OperationKind, OperationLease } from './operations.js';
 export type JobResult = { apply: (client: pg.PoolClient) => Promise<void> };
 export type JobHandler = (lease: OperationLease) => Promise<JobResult>;
 
+export function queueConcurrency(
+  kind: OperationKind,
+  environment: NodeJS.ProcessEnv,
+) {
+  const setting =
+    kind === 'answer-chat'
+      ? (['JOB_CHAT_CONCURRENCY', 8] as const)
+      : kind === 'generate-exam'
+        ? (['JOB_EXAM_CONCURRENCY', 4] as const)
+        : kind === 'grade-answer' || kind === 'reevaluate-answer'
+          ? (['JOB_GRADE_CONCURRENCY', 4] as const)
+          : (['JOB_MATERIAL_CONCURRENCY', 2] as const);
+  const value = Number(environment[setting[0]] ?? setting[1]);
+  if (!Number.isInteger(value) || value < 1 || value > 20) {
+    throw new Error('JOB_CONCURRENCY_INVALID');
+  }
+  return value;
+}
+
 export class OperationDispatcher {
   private readonly boss: PgBoss;
   private interval: ReturnType<typeof setInterval> | undefined;
   private dispatching = false;
+  private readonly concurrency: Record<OperationKind, number>;
 
   constructor(
     databaseUrl: string,
     private readonly operations: OperationRepository,
   ) {
+    this.concurrency = Object.fromEntries(
+      operationKinds.map((kind) => [kind, queueConcurrency(kind, process.env)]),
+    ) as Record<OperationKind, number>;
     this.boss = new PgBoss(databaseUrl);
     this.boss.on('error', () => {
       process.stderr.write('Falha na fila de trabalhos.\n');
@@ -39,7 +62,7 @@ export class OperationDispatcher {
         kind,
         {
           pollingIntervalSeconds: 1,
-          localConcurrency: kind === 'generate-exam' ? 1 : 2,
+          localConcurrency: this.concurrency[kind],
         },
         async (jobs) => {
           for (const job of jobs) {

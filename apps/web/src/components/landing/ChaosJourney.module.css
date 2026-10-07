@@ -1,0 +1,942 @@
+@font-face {
+  font-family: 'Caderno Hand';
+  src: url('/fonts/Caveat-Variable.ttf') format('truetype');
+  font-weight: 400 700;
+  font-style: normal;
+  font-display: swap;
+}
+
+.journey {
+  --school-ink: #193f34;
+  --school-paper: #f1eedf;
+  --school-yellow: #ecfa64;
+  --school-hand: 'Caderno Hand', cursive;
+  position: relative;
+  height: 440svh;
+  color: var(--school-paper);
+  background: #192327;
+  isolation: isolate;
+}
+
+.accessibleTitle {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+.stage {
+  position: sticky;
+  top: 0;
+  height: 100svh;
+  min-height: 650px;
+  overflow: hidden;
+  isolation: isolate;
+}
+
+.chalkboardBackground,
+.warmBackground {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: -1;
+}
+
+.chalkboardBackground img,
+.warmBackground img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.stageHeader {
+  position: absolute;
+  z-index: 20;
+  top: clamp(20px, 4svh, 48px);
+  left: 5%;
+  right: 5%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1.5rem;
+  min-height: 72px;
+  padding: 0.5rem 0 1.25rem;
+  line-height: 1.5;
+  overflow: visible;
+  border-bottom: 1px solid currentColor;
+  border-color: color-mix(in srgb, currentColor 20%, transparent);
+}
+
+.stageBrand {
+  display: inline-flex;
+  flex-shrink: 0;
+  gap: 0.5rem;
+  align-items: center;
+  color: inherit !important;
+  font-size: 1.4rem;
+  font-weight: 750;
+  letter-spacing: -0.03em;
+  line-height: 1.5;
+  padding-block: 0.2em;
+  text-decoration: none;
+}
+
+.stageBrand svg {
+  width: 22px;
+  height: 22px;
+}
+
+.stageNav {
+  display: flex;
+  align-items: center;
+  gap: 2rem;
+  font-size: 0.75rem;
+}
+
+.stageNav a {
+  display: inline-flex;
+  align-items: center;
+  flex-shrink: 0;
+  min-height: 44px;
+  line-height: 1.5;
+  white-space: nowrap;
+  overflow: visible;
+  color: inherit !important;
+  text-decoration: none;
+  text-underline-offset: 5px;
+}
+
+.stageNav a:hover {
+  text-decoration: underline;
+}
+
+.stageNav .navCta {
+  padding: 0.65rem 1rem;
+  background: var(--school-yellow);
+  color: var(--school-ink) !important;
+  border-radius: 2px;
+  font-weight: 700;
+}
+
+.stage[data-phase='4'] .navCta,
+.journey[data-reduced='true'] .navCta {
+  background: var(--school-ink);
+  color: var(--school-paper) !important;
+}
+
+.intro {
+  position: absolute;
+  z-index: 7;
+  left: 5%;
+  top: 25%;
+  width: 43%;
+  max-width: 660px;
+}
+
+.intro h2 {
+  margin: 0;
+  width: 100%;
+  font-family: var(--font-body);
+  font-size: clamp(3.3rem, 5.45vw, 5.75rem);
+  font-weight: 850;
+  text-transform: uppercase;
+  line-height: 1.04;
+  letter-spacing: -0.035em;
+  color: #192327;
+}
+
+.heroLine,
+.heroHighlight {
+  display: block;
+  width: 100%;
+  max-width: 100%;
+  white-space: nowrap;
+  padding: 0.12em 0.2em 0.14em;
+  margin: 0 0 0.065em -0.055em;
+  background: url('/landing/school-kit/images/torn-strip-cream.webp') center /
+    100% 100% no-repeat;
+  transform: rotate(-2deg);
+}
+
+.heroHighlight {
+  background-image: url('/landing/school-kit/images/torn-strip-yellow.webp');
+  transform: rotate(1deg);
+}
+
+.heroLine:last-child {
+  transform: rotate(-1deg);
+}
+
+.introCopy {
+  max-width: 380px;
+  margin: 1.8rem 0 1.25rem;
+  font-size: clamp(0.9rem, 1.1vw, 1.075rem);
+  line-height: 1.6;
+}
+
+.actions,
+.finalActions {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 1rem 1.5rem;
+}
+
+.cta {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 1.25rem;
+  padding: 0.85rem 1.2rem;
+  min-height: 48px;
+  background: var(--school-ink);
+  color: var(--school-paper) !important;
+  border: 0;
+  border-radius: 3px;
+  font-size: 0.9rem;
+  font-weight: 700;
+  text-decoration: none;
+  transition:
+    background 180ms ease,
+    transform 180ms ease;
+}
+
+.cta:hover {
+  background: #2f5846;
+  transform: translateY(-2px);
+}
+
+.secondary {
+  color: inherit !important;
+  font-size: 0.8rem;
+  font-weight: 600;
+  text-decoration: underline;
+  text-underline-offset: 5px;
+}
+
+.cta:focus-visible,
+.secondary:focus-visible,
+.stageNav a:focus-visible,
+.stageBrand:focus-visible {
+  outline: 3px solid currentColor;
+  outline-offset: 5px;
+}
+
+.scrollHint {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  margin-top: 1.4rem;
+  font-size: 0.7rem;
+}
+
+.scrollHint svg {
+  width: 16px;
+  height: 16px;
+}
+
+.scene {
+  position: absolute;
+  z-index: 4;
+  right: 5%;
+  top: 25%;
+  width: 47%;
+  height: 65svh;
+  min-height: 440px;
+  max-height: 700px;
+  pointer-events: none;
+}
+
+.paper {
+  container-type: size;
+  --paper-rule: 6.25cqh;
+  position: absolute;
+  left: 28%;
+  top: 30%;
+  width: 44%;
+  height: 35%;
+  color: var(--school-ink);
+  transform-origin: 50% 50%;
+}
+
+.questionPaper {
+  z-index: 4;
+}
+.materialPaper {
+  z-index: 3;
+}
+.examPaper {
+  z-index: 2;
+}
+.feedbackPaper {
+  z-index: 5;
+}
+
+.paperTexture {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: fill;
+  filter: drop-shadow(3px 7px 6px rgb(25 35 39 / 0.18));
+  user-select: none;
+}
+
+.paperBody,
+.scribbles {
+  position: absolute;
+  inset: 13% 12% 13% 16%;
+  padding: 0;
+  font-family: var(--school-hand);
+  font-synthesis: none;
+  line-height: calc(2 * var(--paper-rule));
+  letter-spacing: 0;
+}
+
+.paperHeading {
+  display: block;
+  margin: 0;
+  font-size: 7.2cqw;
+  font-weight: 700;
+  color: #193f34;
+  text-decoration: underline;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 0.1em;
+}
+
+.paperTitle {
+  display: block;
+  margin: var(--paper-rule) 0 0;
+  font-size: 8cqw;
+  font-weight: 600;
+  color: #253c56;
+  text-wrap: pretty;
+}
+
+.microNote {
+  display: block;
+  margin: 0;
+  font-size: 6.4cqw;
+  font-weight: 500;
+  color: #253c56;
+}
+
+.scribbles {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: flex-start;
+  color: #253c56;
+  transform: rotate(-2deg);
+}
+
+.scribbles strong {
+  display: block;
+  font-size: 11.5cqw;
+  font-weight: 600;
+  line-height: 0.98;
+  white-space: pre-line;
+}
+
+.chaosNote {
+  margin-top: 0.4em;
+  font-size: 6.5cqw;
+  line-height: 1.15;
+  transform: rotate(2deg);
+}
+
+.examPaper .scribbles {
+  transform: rotate(3deg);
+}
+
+.feedbackPaper .scribbles {
+  transform: rotate(-4deg);
+}
+
+.scribbleUnderline {
+  position: absolute;
+  left: 0;
+  width: 76%;
+  bottom: -4%;
+  height: 7%;
+  background: currentColor;
+  mask: url('/landing/school-kit/decorations/scribble-underline.svg') center /
+    contain no-repeat;
+}
+
+.extraPapers {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  pointer-events: none;
+}
+
+.extraWriting {
+  position: absolute;
+  inset: 13% 12% 12% 16%;
+  display: flex;
+  flex-direction: column;
+  gap: 0.1em;
+  color: #253c56;
+  font-family: var(--school-hand);
+  font-size: 8cqw;
+  line-height: 1.15;
+  font-weight: 500;
+}
+
+.extraWriting strong {
+  font-size: 1.15em;
+  font-weight: 700;
+}
+
+.paperTape {
+  position: absolute;
+  z-index: 6;
+  top: -5%;
+  left: 38%;
+  width: 25%;
+  height: 12%;
+  opacity: 0.7;
+  background: #eee4be;
+  transform: rotate(7deg);
+}
+
+.extraPaper {
+  container-type: size;
+  position: absolute;
+  width: clamp(210px, 20vw, 340px);
+  height: auto;
+  aspect-ratio: 700 / 520;
+  z-index: 1;
+  transform-origin: center;
+}
+
+.extraPaper img {
+  width: 100%;
+  height: 100%;
+  object-fit: fill;
+  filter: drop-shadow(3px 7px 6px rgb(25 35 39 / 0.15));
+}
+
+.extraCream {
+  left: -4%;
+  bottom: -13%;
+  transform: rotate(-18deg);
+}
+.extraWarm {
+  right: -6%;
+  top: 11%;
+  transform: rotate(25deg);
+}
+.extraLilac {
+  left: 42%;
+  top: -9%;
+  width: clamp(180px, 16vw, 260px);
+  transform: rotate(12deg);
+}
+
+.schoolObject {
+  position: absolute;
+  z-index: 8;
+  height: auto;
+  pointer-events: none;
+  transform-origin: center;
+}
+
+.objectFloat {
+  position: relative;
+  width: 100%;
+  height: 100%;
+}
+
+.schoolObject img {
+  width: 100%;
+  height: auto;
+  object-fit: contain;
+  filter: drop-shadow(6px 12px 9px rgb(25 35 39 / 0.2));
+  user-select: none;
+}
+
+.pencil {
+  left: 55%;
+  top: 78%;
+  width: 43%;
+  aspect-ratio: 495 / 132;
+}
+.eraser {
+  left: -6%;
+  top: -5%;
+  width: 20%;
+  aspect-ratio: 390 / 240;
+}
+.paperclip {
+  left: 18%;
+  top: 56%;
+  width: 16%;
+  aspect-ratio: 334 / 166;
+}
+.crumpled {
+  right: -10%;
+  top: 49%;
+  width: 30%;
+  aspect-ratio: 391 / 405;
+}
+
+.phaseCopy {
+  position: absolute;
+  z-index: 7;
+  left: 5%;
+  top: 34%;
+  width: 38%;
+  max-width: 560px;
+  color: inherit;
+}
+
+.middleTitle {
+  margin: 0;
+  font-family: var(--font-display), Georgia, serif;
+  font-size: clamp(2.4rem, 4.5vw, 4.1rem);
+  font-weight: 650;
+  line-height: 1.06;
+  letter-spacing: -0.025em;
+  text-wrap: balance;
+}
+
+.phaseTitle {
+  margin: 0;
+  font-family: var(--font-body);
+  font-size: clamp(2.7rem, 4.65vw, 5rem);
+  font-weight: 850;
+  line-height: 1.04;
+  letter-spacing: -0.035em;
+  text-transform: uppercase;
+  text-wrap: balance;
+}
+
+.phaseTitle span {
+  display: block;
+}
+
+.phaseDescription {
+  max-width: 380px;
+  margin: 1.3rem 0;
+  font-size: clamp(0.85rem, 1.1vw, 1rem);
+  line-height: 1.55;
+}
+
+.finalHighlight {
+  display: inline-block;
+  margin-top: 1rem;
+  padding: 0.35rem 0.75rem;
+  font-size: 0.83rem;
+  line-height: 1.45;
+  background: url('/landing/school-kit/images/torn-strip-yellow.webp') center /
+    100% 100% no-repeat;
+  color: var(--school-ink);
+}
+
+.finalActions {
+  margin-top: 1.25rem;
+}
+
+.stageProgress {
+  position: absolute;
+  z-index: 10;
+  left: 27%;
+  right: 17%;
+  bottom: 4%;
+  display: flex;
+  padding: 0.35rem 0.5rem;
+  gap: 1rem;
+  align-items: center;
+  font-size: 0.58rem;
+  font-weight: 600;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+}
+
+.progressLine {
+  position: relative;
+  flex: 1;
+  height: 1px;
+  background: color-mix(in srgb, currentColor 25%, transparent);
+  overflow: hidden;
+}
+
+.progressLine > * {
+  position: absolute;
+  inset: 0;
+  background: currentColor;
+  transform-origin: left;
+}
+
+.progressDot {
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: currentColor;
+}
+
+.finalPrompt {
+  position: absolute;
+  bottom: 1%;
+  right: 0;
+  color: var(--school-ink);
+  font-size: 0.6rem;
+}
+
+@media (min-width: 1600px) {
+  .intro,
+  .phaseCopy {
+    left: calc((100vw - 1440px) / 2);
+  }
+  .scene {
+    right: calc((100vw - 1440px) / 2);
+    width: 700px;
+  }
+}
+
+@media (min-width: 761px) and (max-width: 1000px) {
+  .intro {
+    width: 46%;
+  }
+  .intro h2 {
+    font-size: 5.9vw;
+  }
+  .scene {
+    width: 46%;
+    right: 3%;
+  }
+  .phaseTitle {
+    font-size: 3.1rem;
+  }
+  .phaseCopy {
+    width: 42%;
+  }
+  .stageNav {
+    gap: 1.25rem;
+  }
+}
+
+@media (max-width: 760px) {
+  .journey {
+    height: 400svh;
+  }
+  .stage {
+    min-height: 700px;
+  }
+  .stageHeader {
+    top: 20px;
+    left: 6%;
+    right: 6%;
+    min-height: 60px;
+    padding: 0.25rem 0 0.9rem;
+    gap: 0.5rem;
+  }
+  .stageBrand {
+    font-size: 1.1rem;
+  }
+  .stageBrand svg {
+    width: 19px;
+    height: 19px;
+  }
+  .stageNav {
+    gap: 0.75rem;
+    font-size: 0.62rem;
+  }
+  .stageNav a:first-child {
+    display: none;
+  }
+  .stageNav .navCta {
+    padding: 0.55rem 0.65rem;
+  }
+  .intro {
+    top: 17%;
+    left: 6%;
+    width: 88%;
+    max-width: 520px;
+  }
+  .intro h2 {
+    font-size: clamp(3rem, 13.8vw, 5.5rem);
+    line-height: 1.02;
+  }
+  .introCopy {
+    max-width: 340px;
+    margin: 1rem 0 0.9rem;
+    font-size: 0.8rem;
+    line-height: 1.45;
+  }
+  .actions,
+  .finalActions {
+    gap: 0.7rem 1rem;
+  }
+  .cta {
+    min-height: 44px;
+    padding: 0.7rem 0.9rem;
+    font-size: 0.77rem;
+    gap: 0.8rem;
+  }
+  .secondary {
+    font-size: 0.73rem;
+  }
+  .scrollHint {
+    font-size: 0.6rem;
+    margin-top: 0.8rem;
+  }
+  .scene {
+    top: 64%;
+    left: 5%;
+    right: auto;
+    width: 90%;
+    height: 33svh;
+    min-height: 245px;
+    max-height: 320px;
+  }
+  .extraWarm {
+    width: 33%;
+    right: -18%;
+    top: 13%;
+  }
+  .extraLilac {
+    width: 36%;
+    left: -16%;
+    top: 75%;
+    transform: rotate(-20deg);
+  }
+  .extraCream {
+    width: 33%;
+    left: -12%;
+    bottom: -4%;
+  }
+  .eraser {
+    display: none;
+  }
+  .crumpled {
+    width: 26%;
+    right: -6%;
+  }
+  .pencil {
+    width: 35%;
+  }
+  .eraser {
+    width: 17%;
+  }
+  .paperclip {
+    width: 16%;
+  }
+  .phaseCopy {
+    top: 18%;
+    left: 6%;
+    width: 88%;
+    max-width: 520px;
+  }
+  .middleTitle {
+    font-size: clamp(2.4rem, 10vw, 3.7rem);
+    max-width: 360px;
+  }
+  .phaseTitle {
+    font-size: clamp(2.7rem, 11.5vw, 4.3rem);
+    max-width: 440px;
+  }
+  .phaseDescription {
+    font-size: 0.8rem;
+    line-height: 1.45;
+    max-width: 330px;
+    margin: 1rem 0;
+  }
+  .finalHighlight {
+    font-size: 0.73rem;
+    margin-top: 0.7rem;
+    padding: 0.35rem 0.6rem;
+  }
+  .finalActions {
+    margin-top: 0.9rem;
+  }
+  .stageProgress {
+    left: 27%;
+    right: 6%;
+    bottom: 3%;
+    gap: 0.5rem;
+    font-size: 0.47rem;
+  }
+  .finalPrompt {
+    font-size: 0.48rem;
+    bottom: -2%;
+  }
+}
+
+@media (max-width: 380px) {
+  .stageBrand svg {
+    display: none;
+  }
+  .intro {
+    top: 15%;
+  }
+  .intro h2 {
+    font-size: 13.7vw;
+  }
+  .introCopy {
+    font-size: 0.75rem;
+  }
+  .scene {
+    top: 64%;
+  }
+  .phaseCopy {
+    top: 17%;
+  }
+  .phaseTitle {
+    font-size: 11.4vw;
+  }
+}
+
+@media (min-width: 761px) and (max-height: 820px) {
+  .stage {
+    min-height: 0;
+  }
+  .intro {
+    top: 22%;
+  }
+  .intro h2 {
+    font-size: clamp(2.5rem, min(5.45vw, 9.5svh), 5.75rem);
+  }
+  .introCopy {
+    margin: 1rem 0;
+  }
+  .scrollHint {
+    margin-top: 0.9rem;
+  }
+  .phaseCopy {
+    top: 25%;
+  }
+  .phaseTitle {
+    font-size: clamp(2.4rem, min(4.65vw, 8svh), 5rem);
+  }
+  .phaseDescription {
+    margin: 0.8rem 0;
+  }
+  .finalHighlight,
+  .finalActions {
+    margin-top: 0.75rem;
+  }
+  .scene {
+    min-height: 0;
+  }
+}
+
+@media (max-width: 760px) and (max-height: 740px) {
+  .stage {
+    min-height: 0;
+  }
+  .intro,
+  .phaseCopy {
+    top: max(100px, 16svh);
+  }
+  .intro h2 {
+    font-size: clamp(2.4rem, min(13.7vw, 7.5svh), 3.5rem);
+  }
+  .phaseTitle {
+    font-size: clamp(2.1rem, min(11.4vw, 6.5svh), 3rem);
+  }
+  .scene {
+    top: 67%;
+    height: 29svh;
+    min-height: 220px;
+  }
+  .introCopy,
+  .phaseDescription {
+    margin: 0.7rem 0;
+  }
+  .finalHighlight,
+  .finalActions {
+    margin-top: 0.5rem;
+  }
+}
+
+.journey[data-reduced='true'] {
+  height: auto;
+  background: var(--school-paper);
+  color: var(--school-ink);
+}
+
+.journey[data-reduced='true'] .stage {
+  position: relative;
+  height: auto;
+  min-height: 0;
+  padding: 8rem 5% 3rem;
+}
+
+.journey[data-reduced='true'] .intro,
+.journey[data-reduced='true'] .chalkboardBackground,
+.journey[data-reduced='true'] .schoolObject,
+.journey[data-reduced='true'] .extraPaper,
+.journey[data-reduced='true'] .scrollHint,
+.journey[data-reduced='true'] .stageProgress {
+  display: none;
+}
+
+.journey[data-reduced='true'] .stageHeader {
+  top: 2rem;
+}
+
+.journey[data-reduced='true'] .phaseCopy {
+  position: relative;
+  top: auto;
+  left: auto;
+  width: min(100%, 950px);
+  max-width: none;
+  margin: 0 auto 2.5rem;
+  opacity: 1 !important;
+  transform: none !important;
+}
+
+.journey[data-reduced='true'] .scene {
+  position: relative;
+  top: auto;
+  left: auto;
+  right: auto;
+  width: min(100%, 950px);
+  height: auto;
+  min-height: 0;
+  max-height: none;
+  margin: 0 auto;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1rem;
+}
+
+.journey[data-reduced='true'] .paper {
+  position: relative;
+  left: auto;
+  top: auto;
+  width: 100%;
+  height: auto;
+  min-height: 210px;
+  aspect-ratio: 700 / 520;
+  transform: none !important;
+}
+
+.journey[data-reduced='true'] .finalPrompt {
+  position: relative;
+  grid-column: 1 / -1;
+  text-align: right;
+  bottom: auto;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .cta {
+    transition: none;
+  }
+}
+
+@media (max-width: 760px) {
+  .journey[data-reduced='true'] .scene {
+    grid-template-columns: 1fr;
+  }
+  .journey[data-reduced='true'] .paper {
+    min-height: 0;
+  }
+}

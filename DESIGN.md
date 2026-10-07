@@ -1,33 +1,35 @@
 # Direção visual do Caderno
 
-Interface de estudo com linguagem de caderno: folha clara, margem fina, leitura contínua e pequenos sinais de anotação. A ornamentação permanece fora da área de respostas e não sugere que o professor de IA seja humano.
+Estúdio de aprendizagem com composição editorial: títulos expressivos, superfícies de papel quente, verde profundo, detalhes em sálvia e damasco. A interface apresenta uma identidade consistente desde a entrada até a correção de uma prova. Perguntas, respostas e evidências continuam sendo o conteúdo principal.
 
-## Referências aplicadas
+## Sistema visual
 
-- [dark.design](https://www.dark.design): contraste forte e título editorial no convite inicial, concentrados no painel de abertura.
-- [Mobbin](https://mobbin.com): fluxos de entrada e navegação com ações reconhecíveis e continuidade entre telas.
-- [BentoGrids](https://bentogrids.com): composição assimétrica de blocos no estado inicial, com exemplos de perguntas como conteúdo real.
-- [Land-book](https://land-book.com): superfícies claras, espaços generosos e hierarquia legível no restante do produto.
+- Fundo `#F8F5EE`, folha `#FFFEFA`, tinta `#1D352D`, texto secundário `#66716A`.
+- Ação `#173D32`, sálvia `#DCE8D6`, damasco `#E9A77C`, erro `#A52D35`, foco `#326A53`.
+- DM Sans Variable no corpo e Fraunces Variable nos títulos editoriais. Ambas são hospedadas pelo próprio aplicativo, sem busca de fontes durante o build.
+- Escala de espaços de 4 px, campos e ações com altura confortável, raios menores em controles e maiores em superfícies principais. Sombras suaves distinguem camadas.
+- Navegação lateral escura, cabeçalho claro, páginas com títulos fortes, formulários organizados em etapas e resultados com leitura rápida e evidências acessíveis.
 
-O chat conserva a folha clara e a largura de leitura. A prova, o resultado e a evolução usam a mesma hierarquia; o gráfico tem tabela com os mesmos valores e identifica níveis separadamente.
+## Componentes
 
-## Tokens
+O projeto usa componentes oficiais de [shadcn/ui](https://ui.shadcn.com) obtidos pelo registro: Button, Card, Badge, Progress, Sheet e DropdownMenu. Os componentes [Magic UI](https://magicui.design) BlurFade e NumberTicker apoiam a entrada das seções e a apresentação dos indicadores. Tailwind integra as classes dos componentes; módulos CSS tratam a composição específica dos fluxos.
 
-- Fundo `#F7F7F2`, folha `#FFFFFF`, tinta `#202A27`, texto secundário `#53615A`.
-- Ação `#1E5B49`, borda `#D5DDD6`, erro `#A52D35`, aviso `#775A17`, foco `#134FBC`.
-- Tipografia Source Sans 3 quando disponível, com Segoe UI e sans-serif como fallback. Corpo 16 px; títulos em escala curta e sem peso decorativo.
-- Raio de 7 a 10 px, linhas discretas e sombra apenas no drawer móvel.
+Os campos têm rótulos persistentes, os botões descrevem ações e o foco permanece visível. A conversa distingue estudante e IA, apresenta materiais como apoio e abre fontes junto da citação. As provas mostram progresso, navegação por questão e estados de salvamento. A evolução identifica níveis e mantém a tabela equivalente ao gráfico.
 
-## Componentes e movimento
+## Chat e evolução
 
-Botões e links são nomeados por ações, campos têm rótulo persistente, estados informam o próximo passo. O chat apresenta mensagem do estudante e resposta da IA em leitura contínua. O seletor de personalidade explica o método pedagógico de cada opção. Animações curtas somente para feedback de interação e desativadas com `prefers-reduced-motion`.
+O chat segue a estrutura solicitada do ChatGPT: coluna de mensagens central, perguntas em balões à direita, respostas do professor sobre a superfície de leitura e caixa de escrita sempre disponível na parte inferior. O menu de personalidade ocupa a posição do seletor de modelos, no canto superior esquerdo da área principal. Arquivos enviados ficam no painel à direita; no celular, abrem em um painel próprio. A marca e os nomes continuam sendo os do Caderno.
 
-## Responsividade
+O menu lateral pode ser recolhido pelo botão do cabeçalho, que continua disponível para reabri-lo. No desktop, divisórias ajustáveis permitem distribuir o espaço entre conversa e PDF ou materiais. Arrastar muda a largura; as setas do teclado também ajustam a divisória e duplo clique restaura a medida inicial. As preferências ficam salvas no navegador. Em telas estreitas, o menu continua em uma gaveta e os painéis se organizam para rolagem vertical.
 
-Em desktop, navegação lateral e coluna ampla de leitura. A 850 px ou menos, a navegação vira drawer; a 360 px a página permanece em uma coluna e o editor fica acessível acima do teclado virtual. O limite de largura de texto da resposta é 72 caracteres. Menus devolvem foco ao botão de abertura.
+No PDF, o mascote acompanha a linha explicada e apresenta uma explicação curta ao lado dela. O botão “Entendi” fica abaixo do mascote e controla o avanço: movimento reduzido e mudanças de zoom não pulam a etapa. Pedidos de outra explicação ou desenho continuam no campo do chat. Desenhos didáticos são diagramas visuais com rótulos e conexões; páginas de estudo não recebem cópias da resposta em prosa.
 
-## Imagens
+A evolução organiza resultados reais em um resumo, gráfico por data e nível, temas e próximas práticas. Filtros compactos e evidências expansíveis deixam a leitura principal mais clara. Não apresentar estimativas ou progresso inventado como resultados do estudante.
 
-Nenhuma imagem é necessária no fluxo de estudo atual: a interface precisa priorizar perguntas e respostas textuais. O detalhe gráfico do caderno será construído com CSS. Avaliar ilustrações apenas quando houver uma necessidade pedagógica concreta, como explicar um conceito visual.
+## Movimento
 
-Validação automatizada: contraste dos tokens principais, foco por teclado e ausência de rolagem horizontal em cinco telas a 360 e 1440 px. Capturas da evolução estão nos artefatos do teste E2E. Leitor de tela, todos os estados de erro e breakpoints intermediários ainda exigem revisão manual.
+Motion organiza entradas de seções, transições de navegação, microinterações de controles e mudanças de estado. Os blocos chegam em sequência curta; ações respondem ao hover e ao toque; indicadores animam até o valor real. Transformações e opacidade são preferidas para evitar deslocamentos no layout. `prefers-reduced-motion` apresenta o conteúdo imediatamente e remove movimentos decorativos.
+
+## Responsividade e validação
+
+A navegação vira menu móvel em telas estreitas. Composições assimétricas passam para uma coluna, os controles quebram de forma previsível e os textos continuam legíveis a 360 px. O editor de conversa fica acessível durante a leitura; fontes, menus e expansões mantêm gestão de foco. Os testes verificam contraste, foco por teclado, axe e ausência de rolagem horizontal em 360, 768, 1024 e 1440 px. As capturas dos fluxos ficam nos artefatos E2E.

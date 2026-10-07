@@ -4,6 +4,7 @@ import {
   ExtractionError,
   extractMaterial,
 } from '../../src/modules/materials/extract.js';
+import { detectMaterialMime } from '../../src/modules/materials/upload.js';
 
 const utf8 = (value: string) => new TextEncoder().encode(value);
 
@@ -31,6 +32,55 @@ function pdfFixture(): Uint8Array {
 }
 
 describe('extração privada de material', () => {
+  it.each([
+    'text/markdown',
+    'text/x-markdown',
+    'text/plain',
+    'application/octet-stream',
+  ])(
+    'aceita Markdown UTF-8 declarado como %s e preserva sintaxe e linhas',
+    async (declaredMime) => {
+      const document = utf8(
+        '\uFEFF# Aula\r\n\r\n```python\r\n  print("Olá")\r\n```\r\n| A | B |',
+      );
+      expect(detectMaterialMime('AULA.MD', document, declaredMime)).toBe(
+        'text/plain',
+      );
+      expect(detectMaterialMime('aula.markdown', document, declaredMime)).toBe(
+        'text/plain',
+      );
+      await expect(extractMaterial('text/plain', document)).resolves.toEqual([
+        { text: '# Aula', locator: { kind: 'line', number: 1 } },
+        { text: '```python', locator: { kind: 'line', number: 3 } },
+        { text: '  print("Olá")', locator: { kind: 'line', number: 4 } },
+        { text: '```', locator: { kind: 'line', number: 5 } },
+        { text: '| A | B |', locator: { kind: 'line', number: 6 } },
+      ]);
+    },
+  );
+
+  it('não aceita binários ou MIME enganoso com extensão Markdown', () => {
+    for (const document of [
+      utf8('%PDF-1.4'),
+      Uint8Array.of(0x50, 0x4b, 0, 0),
+      Uint8Array.of(0xff),
+      utf8('texto\u0000binário'),
+    ]) {
+      expect(() =>
+        detectMaterialMime('aula.md', document, 'text/markdown'),
+      ).toThrow('Use um arquivo PDF');
+      expect(() =>
+        detectMaterialMime('aula.txt', document, 'text/plain'),
+      ).toThrow('Use um arquivo PDF');
+    }
+    expect(() =>
+      detectMaterialMime('aula.md', utf8('# Aula'), 'text/html'),
+    ).toThrow('Use um arquivo PDF');
+    expect(
+      detectMaterialMime('aula.txt', utf8('Texto\tcom\nlinhas'), 'text/plain'),
+    ).toBe('text/plain');
+  });
+
   it('preserva números de linhas TXT e rejeita UTF-8 inválido', async () => {
     await expect(
       extractMaterial('text/plain', utf8('Primeira\n\nTerceira')),

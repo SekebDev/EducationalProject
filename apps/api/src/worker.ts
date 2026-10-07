@@ -21,15 +21,27 @@ await dispatcher.start({
   'reevaluate-answer': createReevaluateJobHandler(config.databaseUrl),
 });
 const purger = new DeletionPurger(config.databaseUrl);
+let purging = false;
 const purgeTimer = setInterval(() => {
+  if (purging) {
+    return;
+  }
+  purging = true;
   void purger
     .purgeDue()
-    .then(() => purger.pruneRecords())
-    .catch(() => process.stderr.write('Falha na purga de exclusões.\n'));
+    .then(() => purger.pruneTutorAttempts())
+    .catch(() => process.stderr.write('Falha na purga de exclusões.\n'))
+    .finally(() => {
+      purging = false;
+    });
 }, 60_000);
+purging = true;
 void purger
   .purgeDue()
-  .catch(() => process.stderr.write('Falha na purga de exclusões.\n'));
+  .catch(() => process.stderr.write('Falha na purga de exclusões.\n'))
+  .finally(() => {
+    purging = false;
+  });
 
 for (const signal of ['SIGINT', 'SIGTERM'] as const) {
   process.once(signal, () => {

@@ -1,0 +1,91 @@
+.controls {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex-wrap: wrap;
+  margin: 0 0 6px;
+}
+.trigger {
+  min-height: 36px;
+  padding: 6px 10px;
+  height: auto;
+  color: #405d4b;
+  font-size: 0.78rem;
+  gap: 6px;
+}
+.menu {
+  width: min(330px, calc(100vw - 24px));
+  padding: 8px;
+}
+.option {
+  padding-top: 10px;
+  padding-bottom: 10px;
+  align-items: flex-start;
+}
+.option strong,
+.option span span {
+  display: block;
+}
+.option strong {
+  font-weight: 600;
+  margin-bottom: 3px;
+}
+.option span span,
+.hint {
+  color: #52675a;
+  font-size: 0.78rem;
+  line-height: 1.5;
+}
+.hint {
+  margin: 8px 8px 4px;
+}
+.messageMetadata {
+  display: block;
+  margin-bottom: 12px;
+  color: #52675a;
+  font-size: 0.74rem;
+  line-height: 1.5;
+}
+.flashcard {
+  margin: 16px 0;
+  border: 1px solid #dce2d6;
+  border-radius: 12px;
+  background: #fffefa;
+  padding: 18px;
+  min-width: 0;
+}
+.flashcard > h4 {
+  margin: 0 0 10px;
+  font-size: 0.78rem;
+  letter-spacing: 0.04em;
+  color: #52675a;
+}
+.flashcard details {
+  margin-top: 16px;
+  border-top: 1px solid #dce2d6;
+}
+.flashcard summary {
+  padding: 12px 0;
+  cursor: pointer;
+  color: #173d32;
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+.flashcard summary:focus-visible {
+  outline: 2px solid #315f45;
+  outline-offset: 3px;
+  border-radius: 3px;
+}
+.flashcard details[open] summary {
+  margin-bottom: 4px;
+}
+@media (max-width: 400px) {
+  .trigger {
+    padding-right: 6px;
+    padding-left: 6px;
+    font-size: 0.74rem;
+  }
+  .flashcard {
+    padding: 14px;
+  }
+}

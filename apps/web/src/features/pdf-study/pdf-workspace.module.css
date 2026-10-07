@@ -1,0 +1,312 @@
+@font-face {
+  font-family: 'Noto Sans Study';
+  src: url('/fonts/noto-sans-study.woff') format('woff');
+  font-weight: 400;
+  font-display: swap;
+}
+.workspace {
+  height: 100%;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  background: var(--canvas);
+}
+.documentHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+  padding: 0.75rem 1.5rem;
+  background: var(--paper);
+  border-bottom: 1px solid var(--line);
+}
+.documentHeader h2 {
+  margin: 0.25rem 0 0;
+  font-family: var(--font-display);
+  font-size: 1.35rem;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+.documentHeader > div {
+  min-width: 0;
+}
+.documentHeader a {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+  font-size: 0.8rem;
+  flex-shrink: 0;
+}
+.eyebrow {
+  font-size: 0.6rem;
+  letter-spacing: 0.1em;
+  color: var(--muted);
+}
+.pageNav {
+  display: flex;
+  gap: 0.75rem;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.5rem 1rem;
+  border-bottom: 1px solid var(--line);
+  background: var(--paper);
+}
+.pageNav > div {
+  display: flex;
+  gap: 0.75rem;
+  align-items: center;
+  font-size: 0.8rem;
+}
+.workspace button {
+  cursor: pointer;
+}
+.pageNav button,
+.pageHeading button,
+.notice button,
+.noteEditor button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  padding: 0.5rem;
+  border: 1px solid var(--line);
+  background: var(--paper);
+  border-radius: 0.4rem;
+  font-size: 0.75rem;
+}
+.workspace button:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+.studyGrid {
+  display: flex;
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+}
+.studyGrid > aside {
+  flex: 0 0 370px;
+  width: 370px;
+  min-width: 0;
+  border-left: 1px solid var(--line);
+}
+.reader {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+.pageHeading {
+  display: flex;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+  align-items: center;
+  padding: 0.75rem 1rem;
+  font-size: 0.75rem;
+  color: var(--muted);
+}
+.pageHeading > span {
+  flex: 1;
+}
+.scrollPage {
+  flex: 1;
+  overflow: auto;
+  min-height: 240px;
+  padding: 0.5rem 2rem 5rem;
+  background-color: #e8e9e2;
+  background-image: radial-gradient(#c4cbbf 0.5px, transparent 0.5px);
+  background-size: 12px 12px;
+}
+.pageFrame {
+  width: max-content;
+  position: relative;
+  margin: 0 auto;
+}
+.pageFrame[data-mascot-visible='true'] {
+  padding-right: 100px;
+}
+.locked {
+  pointer-events: none;
+}
+.floatingMascot {
+  position: absolute;
+  z-index: 7;
+  width: 95px;
+  pointer-events: none;
+  display: flex;
+  align-items: center;
+  flex-direction: column;
+  transition-property: top, left;
+}
+.floatingMascot > svg {
+  width: 90px;
+  height: 80px;
+}
+.floatingMascot > span {
+  border: 1px solid var(--line);
+  background: var(--paper);
+  padding: 0.25rem 0.5rem;
+  font-size: 0.6rem;
+  border-radius: 1rem;
+  white-space: nowrap;
+}
+.readerHint {
+  padding: 0.6rem 1rem;
+  font-size: 0.7rem;
+  color: var(--muted);
+  margin: 0;
+  background: var(--paper);
+}
+.pages {
+  flex: 0 0 190px;
+  padding: 0.5rem;
+  background: var(--paper);
+  overflow: auto;
+  border-right: 1px solid var(--line);
+}
+.pages button {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  width: 100%;
+  text-align: left;
+  padding: 0.75rem 0.5rem;
+  border: 0;
+  background: transparent;
+  border-radius: 0.4rem;
+}
+.pages button[aria-current] {
+  background: var(--sage);
+}
+.pages button > span {
+  border: 1px solid var(--line);
+  padding: 0.4rem;
+  background: white;
+  font-size: 0.75rem;
+}
+.pages button > div {
+  flex: 1;
+  min-width: 0;
+  display: grid;
+  gap: 0.25rem;
+}
+.pages strong {
+  font-size: 0.7rem;
+}
+.pages small {
+  font-size: 0.6rem;
+  color: var(--muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.notice {
+  background: #fff9df;
+  padding: 0.75rem 1.5rem;
+  font-size: 0.8rem;
+  border-bottom: 1px solid #e9ba32;
+}
+.notice p {
+  margin: 0 0 0.5rem;
+}
+.notice > div {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+.opening {
+  display: grid;
+  gap: 1rem;
+  padding: 3rem;
+}
+.noteEditor {
+  padding: 0.75rem;
+  background: var(--paper);
+  display: grid;
+  gap: 0.5rem;
+  font-size: 0.8rem;
+}
+.noteEditor textarea {
+  border: 1px solid var(--line);
+  padding: 0.5rem;
+  max-height: 100px;
+}
+@media (max-width: 1100px) {
+  .pages {
+    flex-basis: 140px;
+  }
+  .scrollPage {
+    padding-inline: 1rem;
+  }
+}
+@media (max-width: 767px) {
+  .documentHeader {
+    padding: 0.75rem 1rem;
+  }
+  .documentHeader a {
+    font-size: 0.65rem;
+  }
+  .eyebrow {
+    display: none;
+  }
+  .studyGrid {
+    flex-direction: column;
+    overflow: auto;
+  }
+  .studyGrid > aside {
+    flex: none;
+    width: 100%;
+    border-left: 0;
+    border-top: 1px solid var(--line);
+  }
+  .reader {
+    flex: none;
+    min-height: 560px;
+  }
+  .scrollPage {
+    max-height: 600px;
+    padding-inline: 0.75rem;
+  }
+  .pages {
+    display: flex;
+    flex: none;
+    min-height: 80px;
+    overflow-x: auto;
+  }
+  .pages button {
+    min-width: 150px;
+  }
+  .documentHeader h2 {
+    font-size: 1.05rem;
+  }
+}
+.embedded .documentHeader {
+  padding: 0.625rem 1rem;
+}
+.embedded .documentHeader h2 {
+  font-size: 1rem;
+}
+.embedded .eyebrow {
+  display: none;
+}
+.embedded .documentHeader button {
+  border: 0;
+  background: transparent;
+  color: var(--muted);
+  padding: 0.5rem;
+}
+.embedded .scrollPage {
+  padding-inline: 0.5rem;
+}
+.embedded .reader {
+  min-height: 0;
+}
+.embedded .studyGrid {
+  min-height: 0;
+}
+@media (prefers-reduced-motion: reduce) {
+  .floatingMascot {
+    transition: none;
+  }
+}

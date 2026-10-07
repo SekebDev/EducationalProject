@@ -37,6 +37,8 @@ export function readMaterialUpload(
           'UPLOAD_INVALID',
           'Envie apenas um arquivo.',
         );
+        stream.resume();
+        return;
       }
       const chunks: Buffer[] = [];
       let size = 0;
@@ -61,7 +63,7 @@ export function readMaterialUpload(
             'O arquivo está vazio.',
           );
         }
-        if (fileCount === 1) {
+        if (!failure) {
           uploaded = {
             name: info.filename,
             declaredMime: info.mimeType,
@@ -114,6 +116,21 @@ export function readMaterialUpload(
   });
 }
 
+function isUtf8Text(bytes: Uint8Array): boolean {
+  try {
+    const decoded = new TextDecoder('utf-8', { fatal: true }).decode(bytes);
+    for (const character of decoded) {
+      const code = character.codePointAt(0) ?? 0;
+      if ((code < 32 && ![9, 10, 13].includes(code)) || code === 127) {
+        return false;
+      }
+    }
+    return true;
+  } catch {
+    return false;
+  }
+}
+
 export function detectMaterialMime(
   name: string,
   bytes: Uint8Array,
@@ -122,21 +139,28 @@ export function detectMaterialMime(
   | 'application/pdf'
   | 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
   | 'text/plain' {
-  const extension = name.toLowerCase().match(/\.(pdf|docx|txt)$/u)?.[1];
+  const extension = name
+    .toLowerCase()
+    .match(/\.(pdf|docx|txt|md|markdown)$/u)?.[1];
   const pdf = Buffer.from(bytes.subarray(0, 5)).toString('ascii') === '%PDF-';
   const zip = bytes[0] === 0x50 && bytes[1] === 0x4b;
   const docx =
     zip && Buffer.from(bytes).includes(Buffer.from('word/document.xml'));
-  const txt = !pdf && !zip;
+  const text = !pdf && !zip && isUtf8Text(bytes);
+  const markdown = extension === 'md' || extension === 'markdown';
   if (
     (extension === 'pdf' && pdf && declaredMime === 'application/pdf') ||
     (extension === 'docx' &&
       docx &&
       declaredMime ===
         'application/vnd.openxmlformats-officedocument.wordprocessingml.document') ||
-    (extension === 'txt' &&
-      txt &&
-      ['text/plain', 'application/octet-stream'].includes(declaredMime))
+    ((extension === 'txt' || markdown) &&
+      text &&
+      [
+        'text/plain',
+        'application/octet-stream',
+        ...(markdown ? ['text/markdown', 'text/x-markdown'] : []),
+      ].includes(declaredMime))
   ) {
     return extension === 'pdf'
       ? 'application/pdf'
@@ -147,6 +171,6 @@ export function detectMaterialMime(
   throw new PublicError(
     415,
     'MATERIAL_FORMAT_INVALID',
-    'Use um arquivo PDF, DOCX ou TXT válido.',
+    'Use um arquivo PDF, DOCX, TXT ou Markdown (.md) válido.',
   );
 }

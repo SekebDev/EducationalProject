@@ -25,6 +25,8 @@ for (const [index, row] of rows.entries()) {
   if (
     !row ||
     typeof row.id !== 'string' ||
+    !row.id.trim() ||
+    (row.error !== null && row.error !== undefined) ||
     ids.has(row.id) ||
     !['source', 'essay'].includes(row.kind) ||
     !Number.isFinite(row.latencyMs) ||
@@ -69,7 +71,7 @@ const implicitUnsupported = sources.filter(
   (row) => !row.humanSupported && !row.unsupportedExplicit,
 ).length;
 const closeGrades = essays.filter(
-  (row) => Math.abs(row.humanPoints - row.aiPoints) <= 0.2,
+  (row) => Math.abs(row.humanPoints - row.aiPoints) <= 0.2 + Number.EPSILON,
 ).length;
 const unjustified = essays.filter((row) => !row.criteriaJustified).length;
 const latencies = rows.map((row) => row.latencyMs).sort((a, b) => a - b);

@@ -9,7 +9,11 @@ function equalToken(first: string, second: string): boolean {
   return a.length === b.length && timingSafeEqual(a, b);
 }
 
-export function csrfProtection(origin: string) {
+export function csrfProtection(
+  origin: string,
+  additionalOrigins: readonly string[] = [],
+) {
+  const allowedOrigins = new Set([origin, ...additionalOrigins]);
   return (request: Request, _response: Response, next: NextFunction): void => {
     if (
       ['GET', 'HEAD', 'OPTIONS'].includes(request.method) ||
@@ -21,7 +25,7 @@ export function csrfProtection(origin: string) {
     const header = request.header('x-csrf-token');
     const cookie = getCookie(request, 'study_csrf');
     if (
-      request.header('origin') !== origin ||
+      !allowedOrigins.has(request.header('origin') ?? '') ||
       !header ||
       !cookie ||
       !equalToken(header, cookie)

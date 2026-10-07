@@ -6,8 +6,41 @@ const environmentSchema = z
       .enum(['development', 'test', 'production'])
       .default('development'),
     API_PORT: z.coerce.number().int().min(1).max(65535).default(3001),
+    API_HOST: z.enum(['127.0.0.1', '0.0.0.0']).optional(),
+    TRUSTED_PROXY_IPS: z
+      .string()
+      .default('')
+      .transform((value) =>
+        value
+          .split(',')
+          .map((item) => item.trim())
+          .filter(Boolean),
+      )
+      .pipe(z.array(z.union([z.ipv4(), z.ipv6()]))),
     DATABASE_URL: z.url().startsWith('postgres://'),
     APP_ORIGIN: z.url(),
+    APP_ADDITIONAL_ORIGINS: z
+      .string()
+      .default('')
+      .transform((value) =>
+        value
+          .split(',')
+          .map((item) => item.trim())
+          .filter(Boolean),
+      )
+      .pipe(
+        z.array(
+          z.url().refine((value) => {
+            if (!URL.canParse(value)) {
+              return false;
+            }
+            const url = new URL(value);
+            return (
+              ['http:', 'https:'].includes(url.protocol) && url.origin === value
+            );
+          }),
+        ),
+      ),
     SESSION_SECRET: z.string().min(32),
     AI_PROVIDER: z.enum(['fake', 'openai']).default('fake'),
     OPENAI_API_KEY: z.string().optional(),
@@ -74,8 +107,11 @@ const environmentSchema = z
 export type AppConfig = {
   nodeEnv: 'development' | 'test' | 'production';
   apiPort: number;
+  apiHost?: '127.0.0.1' | '0.0.0.0';
+  trustedProxyIps?: string[];
   databaseUrl: string;
   appOrigin: string;
+  additionalAppOrigins?: string[];
   sessionSecret: string;
   aiProvider: 'fake' | 'openai';
   openAiApiKey?: string;
@@ -102,8 +138,13 @@ export function readConfig(environment: NodeJS.ProcessEnv): AppConfig {
   return {
     nodeEnv: value.NODE_ENV,
     apiPort: value.API_PORT,
+    trustedProxyIps: value.TRUSTED_PROXY_IPS,
+    apiHost:
+      value.API_HOST ??
+      (value.NODE_ENV === 'production' ? '0.0.0.0' : '127.0.0.1'),
     databaseUrl: value.DATABASE_URL,
     appOrigin: value.APP_ORIGIN,
+    additionalAppOrigins: value.APP_ADDITIONAL_ORIGINS,
     sessionSecret: value.SESSION_SECRET,
     aiProvider: value.AI_PROVIDER,
     ...(value.OPENAI_API_KEY ? { openAiApiKey: value.OPENAI_API_KEY } : {}),

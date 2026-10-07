@@ -1,4 +1,9 @@
 import { z } from 'zod';
+import {
+  educationalSkillSchema,
+  responseDepthSchema,
+} from './educational-skills.ts';
+export * from './educational-skills.ts';
 
 export const apiErrorSchema = z.strictObject({
   error: z.strictObject({
@@ -24,6 +29,8 @@ export const conversationSchema = z.strictObject({
   id: z.uuid(),
   title: z.string(),
   personality: personalitySchema,
+  skill: educationalSkillSchema,
+  responseDepth: responseDepthSchema,
   version: z.number().int().positive(),
   createdAt: z.iso.datetime(),
 });
@@ -35,6 +42,9 @@ export const messageSchema = z.strictObject({
   content: z.string(),
   state: z.enum(['queued', 'generating', 'completed', 'failed']),
   personality: personalitySchema,
+  skill: educationalSkillSchema,
+  skillVersion: z.number().int().positive(),
+  responseDepth: responseDepthSchema,
   references: z.array(
     z.strictObject({
       materialId: z.uuid(),
@@ -59,6 +69,13 @@ export const messageSchema = z.strictObject({
   ),
   aiGenerated: z.boolean(),
   operationId: z.uuid().nullable().optional(),
+  pdfContext: z
+    .strictObject({
+      materialId: z.uuid(),
+      pageId: z.uuid(),
+      explanationId: z.uuid(),
+    })
+    .optional(),
 });
 
 export const operationSchema = z.strictObject({
@@ -128,3 +145,4 @@ export type ExamListItem = Pick<
   | 'operationId'
   | 'createdAt'
 >;
+export * from './pdf-study.ts';

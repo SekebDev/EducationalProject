@@ -3,10 +3,34 @@
 import { useEffect, useState, type FormEvent } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+import {
+  ArrowRight,
+  BookOpen,
+  Check,
+  Eye,
+  EyeOff,
+  Layers,
+  LoaderCircle,
+  MessageCircle,
+  Sparkles,
+  TrendingUp,
+} from 'lucide-react';
+import { motion } from 'motion/react';
+import { useReducedMotion } from '@/lib/use-reduced-motion';
+import { Button } from '@/components/ui/button';
+import { Card } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { BlurFade } from '@/components/ui/blur-fade';
 import type { Student } from '@study/contracts';
 import { api, errorMessage } from '../../lib/api';
+import { safeReturnTo } from '../../lib/safe-return-to';
 
 type AuthMode = 'login' | 'register' | 'reset';
+const authIntroduction = {
+  login: 'Bem-vindo de volta',
+  register: 'Um novo começo',
+  reset: 'Vamos recuperar seu acesso',
+};
 
 function authTitle(mode: AuthMode) {
   if (mode === 'register') {
@@ -15,7 +39,7 @@ function authTitle(mode: AuthMode) {
   if (mode === 'reset') {
     return 'Recuperar acesso';
   }
-  return 'Entrar no caderno';
+  return 'Entrar no Caderno';
 }
 
 function AuthLinks({ mode }: { mode: AuthMode }) {
@@ -40,15 +64,13 @@ export function AuthForm({ mode }: { mode: AuthMode }) {
   const [resetToken, setResetToken] = useState('');
   const [returnTo, setReturnTo] = useState('/conversas');
   const [sessionExpired, setSessionExpired] = useState(false);
+  const reduceMotion = useReducedMotion();
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     setResetToken(params.get('token') ?? '');
     setSessionExpired(params.get('expired') === '1');
-    const requested = params.get('returnTo');
-    if (requested?.startsWith('/') && !requested.startsWith('//')) {
-      setReturnTo(requested);
-    }
+    setReturnTo(safeReturnTo(params.get('returnTo'), window.location.origin));
   }, []);
 
   async function submit(event: FormEvent<HTMLFormElement>) {
@@ -92,102 +114,214 @@ export function AuthForm({ mode }: { mode: AuthMode }) {
   }
 
   return (
-    <div className="auth-wrap">
+    <div className="auth-wrap studio-auth">
       <section className="auth-intro" aria-label="Sobre o Caderno">
         <Link className="brand" href="/">
-          <span className="brand-mark" aria-hidden="true">
-            ◧
+          <span className="brand-symbol">
+            <BookOpen size={23} strokeWidth={1.6} aria-hidden="true" />
           </span>
           Caderno
         </Link>
-        <div>
-          <span className="eyebrow">Professor de IA · Prática formativa</span>
-          <h1>Um lugar para entender melhor.</h1>
+        <BlurFade
+          className="auth-editorial"
+          delay={0.08}
+          offset={14}
+          blur="4px"
+        >
+          <Badge variant="outline" className="auth-intro-badge">
+            <Sparkles size={13} aria-hidden="true" /> Seu estúdio de estudo
+          </Badge>
+          <h1>
+            O próximo
+            <br />
+            passo começa
+            <br />
+            com <em>uma pergunta.</em>
+          </h1>
           <p>
-            Pergunte, explore um assunto no seu ritmo e retome seu estudo de
-            onde parou.
+            Dê espaço à sua curiosidade. Converse com seu professor de IA,
+            pratique o que aprendeu e veja suas ideias crescerem.
           </p>
+          <motion.div
+            className="auth-study-preview"
+            initial={reduceMotion ? false : { opacity: 0, y: 20, rotate: -3 }}
+            animate={{ opacity: 1, y: 0, rotate: -2 }}
+            transition={{ duration: reduceMotion ? 0 : 0.7, delay: 0.25 }}
+          >
+            <div className="preview-heading">
+              <span>
+                <BookOpen size={15} aria-hidden="true" /> Uma página do seu
+                caderno
+              </span>
+              <span className="preview-dot" />
+            </div>
+            <p className="preview-question">“E se eu entendesse o porquê?”</p>
+            <div className="preview-answer">
+              <span className="preview-ai">
+                <Sparkles size={15} aria-hidden="true" />
+              </span>
+              <div>
+                <strong>Vamos explorar juntos.</strong>
+                <p>Um conceito, um exemplo e uma nova descoberta.</p>
+              </div>
+            </div>
+            <div className="preview-bottom">
+              <Check size={14} aria-hidden="true" /> Aprender no seu ritmo{' '}
+              <ArrowRight size={15} aria-hidden="true" />
+            </div>
+          </motion.div>
+        </BlurFade>
+        <div className="auth-capabilities">
+          <span>
+            <MessageCircle size={16} aria-hidden="true" /> Converse
+          </span>
+          <span>
+            <Layers size={16} aria-hidden="true" /> Pratique
+          </span>
+          <span>
+            <TrendingUp size={16} aria-hidden="true" /> Evolua
+          </span>
         </div>
-        <p className="hint">Suas conversas ficam na sua conta.</p>
       </section>
       <main className="auth-panel">
-        <span className="eyebrow">Seu espaço de estudo</span>
-        <h2>{authTitle(mode)}</h2>
-        <p className="subtle">
-          {mode === 'reset'
-            ? resetToken
-              ? 'Defina uma nova senha para sua conta.'
-              : 'Informe seu e-mail para receber as instruções.'
-            : 'Comece uma conversa com seu professor de IA.'}
-        </p>
-        {mode === 'login' && sessionExpired && (
-          <p className="form-error" role="alert">
-            Sua sessão terminou. Entre novamente para continuar.
-          </p>
-        )}
-        <form onSubmit={(event) => void submit(event)}>
-          {!(mode === 'reset' && resetToken) && (
-            <div className="field">
-              <label htmlFor="email">E-mail</label>
-              <input
-                id="email"
-                name="email"
-                type="email"
-                autoComplete="email"
-                required
-                maxLength={320}
-                value={email}
-                onChange={(event) => setEmail(event.target.value)}
-              />
-            </div>
-          )}
-          {(mode !== 'reset' || resetToken) && (
-            <div className="field">
-              <label htmlFor="password">Senha</label>
-              <input
-                id="password"
-                name="password"
-                type="password"
-                autoComplete={
-                  mode === 'register' || resetToken
-                    ? 'new-password'
-                    : 'current-password'
-                }
-                required
-                minLength={12}
-                maxLength={128}
-                value={password}
-                onChange={(event) => setPassword(event.target.value)}
-              />
-              {(mode === 'register' || resetToken) && (
-                <span className="hint">Use de 12 a 128 caracteres.</span>
-              )}
-            </div>
-          )}
-          {error && (
-            <p className="form-error" role="alert">
-              {error}
-            </p>
-          )}
-          {success && (
-            <p className="form-success" role="status">
-              {success}
-            </p>
-          )}
-          <button className="button" type="submit" disabled={pending}>
-            {pending
-              ? 'Aguarde…'
+        <BlurFade className="auth-form-wrap" delay={0.14} offset={12}>
+          <span className="auth-section-index">{authIntroduction[mode]}</span>
+          <h2>{authTitle(mode)}</h2>
+          <p className="subtle">
+            {mode === 'reset'
+              ? resetToken
+                ? 'Defina uma nova senha para sua conta.'
+                : 'Informe seu e-mail para receber as instruções.'
               : mode === 'register'
-                ? 'Criar conta'
-                : mode === 'reset'
-                  ? resetToken
-                    ? 'Alterar senha'
-                    : 'Enviar instruções'
-                  : 'Entrar'}
-          </button>
-        </form>
-        <AuthLinks mode={mode} />
+                ? 'Crie seu espaço para as próximas descobertas.'
+                : 'Suas ideias estão esperando por você.'}
+          </p>
+          <Card className="auth-form-card">
+            {mode === 'login' && sessionExpired && (
+              <p className="form-error" role="alert">
+                Sua sessão terminou. Entre novamente para continuar.
+              </p>
+            )}
+            <form onSubmit={(event) => void submit(event)}>
+              {!(mode === 'reset' && resetToken) && (
+                <div className="field">
+                  <label htmlFor="email">E-mail</label>
+                  <input
+                    id="email"
+                    name="email"
+                    type="email"
+                    autoComplete="email"
+                    required
+                    maxLength={320}
+                    placeholder="voce@exemplo.com"
+                    value={email}
+                    onChange={(event) => setEmail(event.target.value)}
+                  />
+                </div>
+              )}
+              <PasswordField
+                visible={mode !== 'reset' || Boolean(resetToken)}
+                newPassword={mode === 'register' || Boolean(resetToken)}
+                password={password}
+                setPassword={setPassword}
+              />
+              {error && (
+                <p className="form-error" role="alert">
+                  {error}
+                </p>
+              )}
+              {success && (
+                <p className="form-success" role="status">
+                  {success}
+                </p>
+              )}
+              <Button
+                className="auth-submit"
+                size="lg"
+                type="submit"
+                disabled={pending}
+              >
+                {pending && (
+                  <LoaderCircle
+                    className="pending-spinner"
+                    size={18}
+                    aria-hidden="true"
+                  />
+                )}
+                {pending
+                  ? 'Aguarde…'
+                  : mode === 'register'
+                    ? 'Criar conta'
+                    : mode === 'reset'
+                      ? resetToken
+                        ? 'Alterar senha'
+                        : 'Enviar instruções'
+                      : 'Entrar'}
+                {!pending && <ArrowRight size={18} aria-hidden="true" />}
+              </Button>
+            </form>
+          </Card>
+          <AuthLinks mode={mode} />
+          <p className="auth-footnote">
+            <BookOpen size={14} aria-hidden="true" /> Um espaço seu para
+            aprender melhor.
+          </p>
+        </BlurFade>
       </main>
     </div>
+  );
+}
+
+function PasswordField({
+  visible,
+  newPassword,
+  password,
+  setPassword,
+}: {
+  visible: boolean;
+  newPassword: boolean;
+  password: string;
+  setPassword: (value: string) => void;
+}) {
+  const [showPassword, setShowPassword] = useState(false);
+  return (
+    <>
+      {visible && (
+        <div className="field">
+          <label htmlFor="password">Senha</label>
+          <div className="password-control">
+            <input
+              id="password"
+              name="password"
+              type={showPassword ? 'text' : 'password'}
+              autoComplete={newPassword ? 'new-password' : 'current-password'}
+              required
+              minLength={12}
+              maxLength={128}
+              placeholder={newPassword ? 'Crie uma senha segura' : 'Sua senha'}
+              value={password}
+              onChange={(event) => setPassword(event.target.value)}
+            />
+            <Button
+              variant="ghost"
+              size="icon"
+              type="button"
+              aria-label={showPassword ? 'Ocultar senha' : 'Mostrar senha'}
+              aria-pressed={showPassword}
+              onClick={() => setShowPassword(!showPassword)}
+            >
+              {showPassword ? (
+                <EyeOff size={18} aria-hidden="true" />
+              ) : (
+                <Eye size={18} aria-hidden="true" />
+              )}
+            </Button>
+          </div>
+          {newPassword && (
+            <span className="hint">Use de 12 a 128 caracteres.</span>
+          )}
+        </div>
+      )}
+    </>
   );
 }

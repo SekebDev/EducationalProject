@@ -25,7 +25,7 @@ export class MaterialStorage {
   private readonly root: string;
 
   constructor(
-    private readonly pool: pg.Pool,
+    private readonly pool: pg.Pool | pg.PoolClient,
     private readonly config: AppConfig,
   ) {
     this.root = resolve(config.storageLocalPath);

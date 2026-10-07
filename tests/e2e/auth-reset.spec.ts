@@ -5,7 +5,7 @@ test('recupera senha por link e explica sessão expirada', async ({ page }) => {
   const email = `reset-${crypto.randomUUID()}@example.invalid`;
   await page.goto('/cadastro');
   await page.getByLabel('E-mail').fill(email);
-  await page.getByLabel('Senha').fill('valid-password-1234');
+  await page.getByLabel('Senha', { exact: true }).fill('valid-password-1234');
   await page.getByRole('button', { name: 'Criar conta' }).click();
   await expect(page).toHaveURL(/\/conversas$/);
   const pool = createPool(process.env.TEST_DATABASE_URL!);
@@ -49,14 +49,18 @@ test('recupera senha por link e explica sessão expirada', async ({ page }) => {
       })
       .toBe(true);
     await page.goto(link);
-    await page.getByLabel('Senha').fill('new-valid-password-5678');
+    await page
+      .getByLabel('Senha', { exact: true })
+      .fill('new-valid-password-5678');
     await page.getByRole('button', { name: 'Alterar senha' }).click();
     await expect(
       page.getByText('Senha alterada. Entre com a nova senha.'),
     ).toBeVisible();
     await page.getByRole('link', { name: 'Já tenho uma conta' }).click();
     await page.getByLabel('E-mail').fill(email);
-    await page.getByLabel('Senha').fill('new-valid-password-5678');
+    await page
+      .getByLabel('Senha', { exact: true })
+      .fill('new-valid-password-5678');
     await page.getByRole('button', { name: 'Entrar' }).click();
     await expect(page).toHaveURL(/\/conversas$/);
     await pool.query(

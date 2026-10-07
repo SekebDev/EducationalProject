@@ -36,6 +36,16 @@ export function createExtractJobHandler(databaseUrl: string): JobHandler {
     const chunks = chunkSegments(segments);
     const embeddings: number[][] = [];
     for (let start = 0; start < chunks.length; start += 32) {
+      const active = await pool.query(
+        `SELECT 1 FROM operation o JOIN material m ON m.id=o.resource_id AND m.owner_id=o.owner_id
+         JOIN conversation c ON c.id=m.conversation_id AND c.owner_id=m.owner_id
+         WHERE o.id=$1 AND o.owner_id=$2 AND o.fence_version=$3 AND o.state='running'
+         AND o.lease_until>now() AND m.deleted_at IS NULL AND c.deleted_at IS NULL AND m.version=$4`,
+        [lease.id, lease.ownerId, lease.fenceVersion, material.version],
+      );
+      if (!active.rowCount) {
+        throw new Error('MATERIAL_UNAVAILABLE');
+      }
       embeddings.push(
         ...(await provider.embed(
           chunks.slice(start, start + 32).map((chunk) => chunk.text),

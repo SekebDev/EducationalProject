@@ -1,6 +1,23 @@
+x-app: &app
+  image: projeto-educacional:local
+  init: true
+  restart: unless-stopped
+
+x-api-environment: &api-environment
+  NODE_ENV: development
+  API_HOST: 0.0.0.0
+  API_PORT: 3001
+  DATABASE_URL: postgres://study:study@db:5432/study
+  APP_ORIGIN: ${DOCKER_APP_ORIGIN:-http://localhost:3000}
+  STORAGE_DRIVER: local
+  STORAGE_LOCAL_PATH: /app/storage
+  SMTP_HOST: smtp
+  SMTP_PORT: 1025
+
 services:
   db:
     image: pgvector/pgvector:pg18
+    restart: unless-stopped
     environment:
       POSTGRES_DB: study
       POSTGRES_USER: study
@@ -12,11 +29,87 @@ services:
     healthcheck:
       test: ['CMD-SHELL', 'pg_isready -U study -d study']
       interval: 5s
+      timeout: 5s
       retries: 10
   smtp:
     image: axllent/mailpit:v1.27
+    restart: unless-stopped
     ports:
       - '127.0.0.1:1025:1025'
       - '127.0.0.1:8025:8025'
+  migrate:
+    <<: *app
+    restart: 'no'
+    working_dir: /app/apps/api
+    command: ['node', 'dist/infrastructure/db/migrate.js']
+    environment:
+      DATABASE_URL: postgres://study:study@db:5432/study
+    depends_on:
+      db:
+        condition: service_healthy
+  api:
+    <<: *app
+    working_dir: /app/apps/api
+    command: ['node', 'dist/main.js']
+    env_file:
+      - ../.env
+    environment: *api-environment
+    ports:
+      - '127.0.0.1:${DOCKER_API_PORT:-3001}:3001'
+    volumes:
+      - study-files:/app/storage
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+      smtp:
+        condition: service_started
+    healthcheck:
+      test:
+        - CMD
+        - node
+        - -e
+        - "fetch('http://127.0.0.1:3001/api/v1/health').then(r=>{if(!r.ok)process.exit(1)}).catch(()=>process.exit(1))"
+      interval: 10s
+      timeout: 5s
+      start_period: 20s
+      retries: 6
+  worker:
+    <<: *app
+    working_dir: /app/apps/api
+    command: ['node', 'dist/worker.js']
+    env_file:
+      - ../.env
+    environment: *api-environment
+    volumes:
+      - study-files:/app/storage
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+  web:
+    <<: *app
+    build:
+      context: ..
+      dockerfile: infra/Dockerfile
+    environment:
+      NODE_ENV: production
+      API_INTERNAL_ORIGIN: http://api:3001
+    ports:
+      - '127.0.0.1:${DOCKER_WEB_PORT:-3000}:3000'
+    depends_on:
+      api:
+        condition: service_healthy
+      worker:
+        condition: service_started
+    healthcheck:
+      test:
+        - CMD
+        - node
+        - -e
+        - "fetch('http://127.0.0.1:3000/api/v1/health').then(r=>{if(!r.ok)process.exit(1)}).catch(()=>process.exit(1))"
+      interval: 10s
+      timeout: 5s
+      start_period: 30s
+      retries: 6
 volumes:
   study-db:
+  study-files:

@@ -4,6 +4,7 @@
     "lib": ["ES2024"],
     "experimentalDecorators": true,
     "emitDecoratorMetadata": true,
+    "rootDir": "../..",
     "outDir": "dist"
   },
   "include": ["src/**/*.ts", "test/**/*.ts"]

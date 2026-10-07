@@ -94,3 +94,23 @@ Entrega sem `acceptUnanswered:true` e com questões não confirmadas retorna 409
 - Consultar prova de conta B com sessão A: 404; não retornar gabarito em mensagens de erro.
 - Excluir fonte durante geração: cancelar publicação, erro `SOURCE_UNAVAILABLE`, histórico anterior preservado.
 - Resultado com todas contestadas: `{status:"no_valid_evidence",percentage:null}`; correção indisponível: pending, nunca zero.
+
+## Métodos educacionais e PDF — contratos atuais
+
+Criar/editar conversa aceita skill e profundidade opcionais, validadas pelos catálogos públicos em `packages/contracts/src/educational-skills.ts`; respostas retornam metadados e cada mensagem congela os snapshots. Novos campos não alteram o contrato de gabarito ou pontuação.
+
+Rotas abaixo mantêm prefixo `/api/v1`, sessão e autorização por material/proprietário. Schemas completos são a referência executável em `packages/contracts/src/pdf-study.ts`.
+
+| Rota | Entrada | Saída |
+| --- | --- | --- |
+| GET /pdf-studies | — | cadernos autorizados; interface principal permanece em conversas |
+| POST /materials/:id/study | — | abre/cria caderno do material PDF |
+| GET /materials/:id/study | — | PdfStudy com revisão, estado e histórico |
+| PUT /materials/:id/study | operationId, baseRevision, state | estado confirmado; conflito em revisão antiga/UUID reutilizado com outro conteúdo |
+| POST /materials/:id/study/history | operationId, baseRevision, direction:undo/redo | resultado confirmado da ação |
+| POST /materials/:id/study/tutor | operationId, baseRevision, pageId, question, selection, image; lessonId/stepId opcionais no schema | NDJSON delta/complete/error, contexto carregado no backend, transação antes de complete |
+| GET /materials/:id/study/export | revision | PDF privado da revisão confirmada |
+
+`lessonId`/`stepId`, `studyAdvanceSchema` e componentes de aula estão parciais: não há rota de avanço implementada nem persistência de lessons pelo tutor. Não usar o schema de avanço como promessa de endpoint disponível; T101 acompanha a integração. O layout atual converte etapas em páginas/anotações compatíveis, preservando conteúdo.
+
+Limites: original até 20.000.000 bytes/200 páginas; caderno até 400 páginas/1.500 anotações; nota até 4.000 caracteres/traço até 2.000 pontos; JSON até 2 MB; tutor uma chamada simultânea por conta e 100 tentativas/24 h. Material excluído não permite novo acesso/exportação. Tentativas interrompidas contam no limite; replay de operação concluída não chama o provider novamente.

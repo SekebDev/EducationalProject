@@ -1,3 +1,7 @@
+import { ResourceIdPipe } from '../../infrastructure/http/resource-id.pipe.js';
+import { SessionGuard } from '../auth/session.guard.js';
+import { CurrentStudent } from '../auth/current-student.decorator.js';
+import type { CurrentStudentEntity } from '../auth/entities/student.entity.js';
 import {
   Controller,
   Delete,
@@ -9,64 +13,56 @@ import {
   Post,
   Req,
   Res,
+  UseGuards,
 } from '@nestjs/common';
 import type { Request, Response } from 'express';
-import { z } from 'zod';
-import { AuthService } from '../auth/auth.service.js';
-import { getCookie } from '../../infrastructure/http/cookies.js';
-import { PublicError } from '../../infrastructure/http/public-error.js';
 import { MaterialsService } from './materials.service.js';
 import { readMaterialUpload } from './upload.js';
 
-function uuid(value: string): string {
-  if (!z.uuid().safeParse(value).success) {
-    throw new PublicError(404, 'NOT_FOUND', 'Material não encontrado.');
-  }
-  return value;
-}
-
+@UseGuards(SessionGuard)
 @Controller('api/v1')
 export class MaterialsController {
   constructor(
-    @Inject(AuthService) private readonly auth: AuthService,
     @Inject(MaterialsService) private readonly materials: MaterialsService,
   ) {}
 
   @Post('conversations/:id/materials')
   @HttpCode(202)
   async upload(
+    @CurrentStudent() student: CurrentStudentEntity,
     @Req() request: Request,
-    @Param('id') conversationId: string,
+    @Param('id', new ResourceIdPipe('Material não encontrado.'))
+    conversationId: string,
     @Headers('idempotency-key') key: string,
   ) {
-    const student = await this.student(request);
     const file = await readMaterialUpload(request);
-    return this.materials.upload(student.id, uuid(conversationId), key, file);
+    return this.materials.upload(student.id, conversationId, key, file);
   }
 
   @Get('conversations/:id/materials')
-  async list(@Req() request: Request, @Param('id') conversationId: string) {
-    const student = await this.student(request);
-    return this.materials.list(student.id, uuid(conversationId));
+  async list(
+    @CurrentStudent() student: CurrentStudentEntity,
+    @Param('id', new ResourceIdPipe('Material não encontrado.'))
+    conversationId: string,
+  ) {
+    return this.materials.list(student.id, conversationId);
   }
 
   @Get('materials/:id')
-  async get(@Req() request: Request, @Param('id') id: string) {
-    const student = await this.student(request);
-    return this.materials.get(student.id, uuid(id));
+  async get(
+    @CurrentStudent() student: CurrentStudentEntity,
+    @Param('id', new ResourceIdPipe('Material não encontrado.')) id: string,
+  ) {
+    return this.materials.get(student.id, id);
   }
 
   @Get('materials/:id/content')
   async content(
-    @Req() request: Request,
-    @Param('id') id: string,
+    @CurrentStudent() student: CurrentStudentEntity,
+    @Param('id', new ResourceIdPipe('Material não encontrado.')) id: string,
     @Res() response: Response,
   ) {
-    const student = await this.student(request);
-    const { metadata, bytes } = await this.materials.content(
-      student.id,
-      uuid(id),
-    );
+    const { metadata, bytes } = await this.materials.content(student.id, id);
     response.setHeader(
       'Content-Type',
       metadata.mime ?? 'application/octet-stream',
@@ -81,25 +77,20 @@ export class MaterialsController {
 
   @Get('materials/:id/chunks/:chunkId')
   async chunk(
-    @Req() request: Request,
-    @Param('id') id: string,
-    @Param('chunkId') chunkId: string,
+    @CurrentStudent() student: CurrentStudentEntity,
+    @Param('id', new ResourceIdPipe('Material não encontrado.')) id: string,
+    @Param('chunkId', new ResourceIdPipe('Material não encontrado.'))
+    chunkId: string,
   ) {
-    const student = await this.student(request);
-    return this.materials.chunk(student.id, uuid(id), uuid(chunkId));
+    return this.materials.chunk(student.id, id, chunkId);
   }
 
   @Delete('materials/:id')
   @HttpCode(204)
   async delete(
-    @Req() request: Request,
-    @Param('id') id: string,
+    @CurrentStudent() student: CurrentStudentEntity,
+    @Param('id', new ResourceIdPipe('Material não encontrado.')) id: string,
   ): Promise<void> {
-    const student = await this.student(request);
-    await this.materials.delete(student.id, uuid(id));
-  }
-
-  private student(request: Request) {
-    return this.auth.currentStudent(getCookie(request, 'study_session'));
+    await this.materials.delete(student.id, id);
   }
 }
