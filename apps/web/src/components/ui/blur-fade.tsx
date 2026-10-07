@@ -80,6 +80,7 @@ export function BlurFade({
   return (
     <AnimatePresence>
       <motion.div
+        data-slot="blur-fade"
         ref={ref}
         initial={reduceMotion ? false : 'hidden'}
         animate={reduceMotion || isInView ? 'visible' : 'hidden'}

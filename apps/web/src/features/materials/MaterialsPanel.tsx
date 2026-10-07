@@ -7,15 +7,22 @@ import {
   useState,
   type FormEvent,
 } from 'react';
-import { motion } from 'motion/react';
-import { useReducedMotion } from '@/lib/use-reduced-motion';
 import { api, errorMessage } from '../../lib/api';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { FileText, Upload } from 'lucide-react';
-import styles from '../../app/conversas/conversation-flow.module.css';
+import {
+  Check,
+  Download,
+  FileText,
+  FolderOpen,
+  LoaderCircle,
+  Trash2,
+  TriangleAlert,
+  Upload,
+  X,
+} from 'lucide-react';
+import styles from './MaterialsPanel.module.css';
 
-type Material = {
+export type ConversationMaterial = {
   id: string;
   name: string;
   mime: string;
@@ -24,6 +31,7 @@ type Material = {
   error: string | null;
   selected: boolean;
 };
+type Material = ConversationMaterial;
 
 export function validateMaterial(file: File): string | null {
   if (file.size === 0) {
@@ -51,11 +59,16 @@ export function useConversationMaterials({
   const [working, setWorking] = useState(false);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(true);
+  const [loadedConversationId, setLoadedConversationId] = useState<
+    string | null
+  >(null);
   const busy = useRef(false);
   const initialLoad = useRef<Promise<void> | null>(null);
   const materialCount = useRef(0);
   const uploadKeys = useRef(new WeakMap<File, string>());
   const [uploadStatus, setUploadStatus] = useState('');
+  const currentConversation = useRef(conversationId);
+  currentConversation.current = conversationId;
   const [failedFiles, setFailedFiles] = useState<
     Array<{ file: File; message: string }>
   >([]);
@@ -64,16 +77,35 @@ export function useConversationMaterials({
     const page = await api<{ items: Material[] }>(
       `/conversations/${conversationId}/materials`,
     );
+    if (currentConversation.current !== conversationId) {
+      return;
+    }
     materialCount.current = page.items.length;
     setMaterials(page.items);
+    setLoadedConversationId(conversationId);
   }, [conversationId]);
 
   useEffect(() => {
+    let mounted = true;
+    setLoading(true);
+    setMaterials([]);
+    setError('');
     const pending = load();
     initialLoad.current = pending;
     void pending
-      .catch((cause: unknown) => setError(errorMessage(cause)))
-      .finally(() => setLoading(false));
+      .catch((cause: unknown) => {
+        if (mounted) {
+          setError(errorMessage(cause));
+        }
+      })
+      .finally(() => {
+        if (mounted) {
+          setLoading(false);
+        }
+      });
+    return () => {
+      mounted = false;
+    };
   }, [load]);
 
   useEffect(() => {
@@ -227,6 +259,7 @@ export function useConversationMaterials({
   return {
     materials,
     loading,
+    loadedConversationId,
     working,
     error,
     uploadStatus,
@@ -237,10 +270,19 @@ export function useConversationMaterials({
   };
 }
 
+function selectionLabel(count: number) {
+  if (count === 0) {
+    return 'Nenhum selecionado';
+  }
+  return `${count} ${count === 1 ? 'selecionado' : 'selecionados'}`;
+}
+
 export function MaterialsPanel({
   controller,
+  onOpenPdf,
 }: {
   controller: ReturnType<typeof useConversationMaterials>;
+  onOpenPdf?: ((id: string) => void) | undefined;
 }) {
   const {
     materials,
@@ -255,95 +297,130 @@ export function MaterialsPanel({
   } = controller;
   const [files, setFiles] = useState<File[]>([]);
   const fileInput = useRef<HTMLInputElement>(null);
-  const reducedMotion = useReducedMotion();
+  const selectedCount = materials.filter(
+    (material) => material.selected && material.state === 'ready',
+  ).length;
+  const processingCount = materials.filter((material) =>
+    ['received', 'processing'].includes(material.state),
+  ).length;
+  const atCapacity = materials.length >= 10;
 
-  function upload(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    const selected = files;
+  function clearFiles() {
     setFiles([]);
     if (fileInput.current) {
       fileInput.current.value = '';
     }
+  }
+
+  function upload(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    const selected = files;
+    clearFiles();
     void uploadFiles(selected);
   }
 
   return (
-    <motion.section
-      className={`materials-panel ${styles.materialsPanel}`}
+    <section
+      className={`materials-panel ${styles.panel}`}
       aria-labelledby="materials-heading"
-      initial={reducedMotion ? false : { opacity: 0, y: -8 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.3 }}
     >
-      <div className={`materials-heading ${styles.materialsHeading}`}>
-        <div>
-          <h3 id="materials-heading">Arquivos da conversa</h3>
-        </div>
-        <Badge variant="secondary" className={styles.materialCount}>
-          {loading ? '…' : materials.length} / 10
-        </Badge>
-      </div>
-      <p className="hint">
-        Envie arquivos PDF, DOCX, TXT ou Markdown (.md), de até 20 MB cada. Você
-        também pode arrastá-los para a conversa. Escolha quais o professor deve
-        consultar.
+      <header className={styles.heading}>
+        <h3 id="materials-heading">Arquivos da conversa</h3>
+        <span
+          className={styles.capacity}
+          aria-label="Materiais enviados, limite de dez"
+        >
+          {loading ? '…' : materials.length}
+          <span> / 10</span>
+        </span>
+      </header>
+      <p className={styles.description}>
+        Escolha quais arquivos o professor deve consultar nas respostas.
       </p>
       <form
-        className={`materials-upload ${styles.materialsUpload}`}
+        className={styles.upload}
         onSubmit={(event) => void upload(event)}
+        aria-label="Enviar materiais"
       >
-        <label htmlFor="material-file">Adicionar material</label>
         <input
           id="material-file"
           ref={fileInput}
           type="file"
+          aria-label="Adicionar material"
           multiple
           className={styles.fileInput}
           tabIndex={-1}
           accept=".pdf,.docx,.txt,.md,.markdown,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document,text/plain,text/markdown,text/x-markdown"
           onChange={(event) => setFiles(Array.from(event.target.files ?? []))}
-          disabled={loading || working || materials.length >= 10}
+          disabled={loading || working || atCapacity}
         />
         <Button
           type="button"
           variant="outline"
           className={styles.chooseFile}
-          disabled={loading || working || materials.length >= 10}
+          disabled={loading || working || atCapacity}
+          aria-describedby="material-upload-hint"
           onClick={() => fileInput.current?.click()}
         >
           <Upload size={16} aria-hidden="true" /> Escolher arquivo
         </Button>
-        {files.map((file, index) => (
-          <span className={styles.selectedFile} title={file.name} key={index}>
-            <FileText size={14} aria-hidden="true" />
-            <span>{file.name}</span>
-          </span>
-        ))}
-        <Button
-          variant="outline"
-          className={styles.uploadButton}
-          type="submit"
-          disabled={files.length === 0 || working || materials.length >= 10}
-        >
-          {working
-            ? 'Aguarde…'
-            : files.length > 1
-              ? 'Enviar arquivos'
-              : 'Enviar arquivo'}
-        </Button>
+        <p id="material-upload-hint" className={styles.uploadHint}>
+          PDF, DOCX, TXT ou Markdown (.md)
+          <br />
+          Até 20 MB por arquivo. Arraste para a conversa.
+        </p>
+        {files.length > 0 && (
+          <div className={styles.pending}>
+            <div className={styles.pendingHeading}>
+              <strong>
+                {files.length}{' '}
+                {files.length === 1
+                  ? 'arquivo para enviar'
+                  : 'arquivos para enviar'}
+              </strong>
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon"
+                className={styles.clearFiles}
+                onClick={clearFiles}
+                disabled={working}
+                aria-label="Limpar arquivos escolhidos"
+              >
+                <X size={16} aria-hidden="true" />
+              </Button>
+            </div>
+            <ul className={styles.pendingList} aria-label="Arquivos escolhidos">
+              {files.map((file, index) => (
+                <li key={index}>
+                  <FileText size={16} aria-hidden="true" />
+                  <span title={file.name}>{file.name}</span>
+                </li>
+              ))}
+            </ul>
+            <Button
+              className={styles.uploadButton}
+              type="submit"
+              disabled={working || loading || atCapacity}
+            >
+              <Upload size={16} aria-hidden="true" />
+              {files.length > 1 ? 'Enviar arquivos' : 'Enviar arquivo'}
+            </Button>
+          </div>
+        )}
       </form>
-      {materials.length >= 10 && (
-        <p className="hint">
+      {atCapacity && (
+        <p className={styles.notice}>
           Você chegou ao limite de 10 materiais. Exclua um para adicionar outro.
         </p>
       )}
       {error && (
-        <p className="form-error" role="alert">
+        <p className={styles.error} role="alert">
           {error}
         </p>
       )}
       {uploadStatus && (
-        <p className="hint" role="status" aria-live="polite">
+        <p className={styles.notice} role="status" aria-live="polite">
           {uploadStatus}
         </p>
       )}
@@ -357,7 +434,7 @@ export function MaterialsPanel({
                 type="button"
                 variant="outline"
                 size="sm"
-                disabled={working || loading || materials.length >= 10}
+                disabled={working || loading || atCapacity}
                 onClick={() => void uploadFiles([file])}
               >
                 Tentar enviar novamente
@@ -367,75 +444,133 @@ export function MaterialsPanel({
         </ul>
       )}
       {loading ? (
-        <p className="hint" role="status">
+        <p className={styles.loading} role="status">
+          <LoaderCircle
+            size={16}
+            className={styles.spinner}
+            aria-hidden="true"
+          />
           Carregando materiais…
         </p>
       ) : materials.length === 0 && !error ? (
-        <p className={styles.emptyMaterials}>
-          Nenhum material enviado. Você pode conversar sem anexos.
-        </p>
+        <div className={styles.emptyMaterials}>
+          <FolderOpen size={24} strokeWidth={1.5} aria-hidden="true" />
+          <strong>Nenhum material enviado</strong>
+          <p>
+            Adicione suas anotações ou textos de estudo. Você também pode
+            conversar sem anexos.
+          </p>
+        </div>
       ) : (
-        <ul className={`materials-list ${styles.materialsList}`}>
-          {materials.map((material, index) => (
-            <motion.li
-              className={styles.materialItem}
-              key={material.id}
-              initial={reducedMotion ? false : { opacity: 0, y: 8 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.25, delay: Math.min(index, 5) * 0.04 }}
-            >
-              <div className={`material-row ${styles.materialRow}`}>
-                <label className="material-choice">
+        <div className={styles.library}>
+          <p
+            className={styles.selectionSummary}
+            role="status"
+            aria-live="polite"
+          >
+            <span>{selectionLabel(selectedCount)}</span>
+            {processingCount > 0 && (
+              <span>{processingCount} em processamento</span>
+            )}
+          </p>
+          <ul
+            className={styles.materialsList}
+            aria-label="Materiais disponíveis"
+          >
+            {materials.map((material) => (
+              <li
+                className={`${styles.materialItem} ${material.selected && material.state === 'ready' ? styles.selected : ''}`}
+                key={material.id}
+              >
+                <label className={styles.materialChoice}>
                   <input
                     type="checkbox"
                     checked={material.selected}
                     disabled={material.state !== 'ready' || working}
+                    aria-label={material.name}
+                    aria-describedby={`material-${material.id}-state`}
                     onChange={() => void toggle(material.id)}
                   />
-                  <span>{material.name}</span>
+                  <FileText
+                    size={19}
+                    strokeWidth={1.6}
+                    className={styles.fileIcon}
+                    aria-hidden="true"
+                  />
+                  <span className={styles.fileName} title={material.name}>
+                    {material.name}
+                  </span>
                 </label>
-                <Badge
-                  variant={
-                    material.state === 'failed' ? 'destructive' : 'secondary'
-                  }
-                  className={styles.materialBadge}
-                >
-                  {material.state === 'ready'
-                    ? 'Pronto'
-                    : material.state === 'failed'
-                      ? 'Falhou'
-                      : 'Processando'}
-                </Badge>
-              </div>
-              <div className="material-actions">
-                <span className="hint">
-                  {(material.bytes / 1_000_000).toFixed(2)} MB
-                </span>
-                {material.state === 'ready' && (
-                  <a href={`/api/v1/materials/${material.id}/content`}>
-                    Baixar
-                  </a>
+                <div className={styles.fileMeta}>
+                  <span
+                    id={`material-${material.id}-state`}
+                    className={`${styles.materialState} ${material.state === 'failed' ? styles.failedState : ''}`}
+                  >
+                    {material.state === 'ready' ? (
+                      <Check size={13} aria-hidden="true" />
+                    ) : material.state === 'failed' ? (
+                      <TriangleAlert size={13} aria-hidden="true" />
+                    ) : (
+                      <LoaderCircle
+                        size={13}
+                        className={styles.spinner}
+                        aria-hidden="true"
+                      />
+                    )}
+                    {material.state === 'ready'
+                      ? 'Pronto'
+                      : material.state === 'failed'
+                        ? 'Falhou'
+                        : 'Processando'}
+                  </span>
+                  <span>
+                    {material.name.split('.').at(-1)?.toUpperCase()} ·{' '}
+                    {material.bytes < 1_000_000
+                      ? `${Math.max(1, Math.round(material.bytes / 1_000))} KB`
+                      : `${(material.bytes / 1_000_000).toFixed(1)} MB`}
+                  </span>
+                </div>
+                <div className={styles.materialActions}>
+                  {material.mime === 'application/pdf' &&
+                    ['ready', 'failed'].includes(material.state) && (
+                      <button
+                        type="button"
+                        onClick={() => onOpenPdf?.(material.id)}
+                        disabled={!onOpenPdf || working}
+                        aria-label={`Estudar ${material.name}`}
+                      >
+                        Estudar PDF
+                      </button>
+                    )}
+                  {material.state === 'ready' && (
+                    <a
+                      href={`/api/v1/materials/${material.id}/content`}
+                      aria-label={`Baixar ${material.name}`}
+                    >
+                      <Download size={14} aria-hidden="true" /> Baixar
+                    </a>
+                  )}
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    className={styles.removeMaterial}
+                    disabled={working}
+                    onClick={() => void remove(material)}
+                  >
+                    <Trash2 size={14} aria-hidden="true" /> Excluir
+                  </Button>
+                </div>
+                {material.state === 'failed' && (
+                  <p className={styles.fileError}>
+                    Não foi possível ler o arquivo:{' '}
+                    {material.error ?? 'erro desconhecido'}.
+                  </p>
                 )}
-                <Button
-                  type="button"
-                  variant="ghost"
-                  className={styles.removeMaterial}
-                  disabled={working}
-                  onClick={() => void remove(material)}
-                >
-                  Excluir
-                </Button>
-              </div>
-              {material.state === 'failed' && (
-                <p className="hint">
-                  Não foi possível ler o arquivo:{' '}
-                  {material.error ?? 'erro desconhecido'}.
-                </p>
-              )}
-            </motion.li>
-          ))}
-        </ul>
+              </li>
+            ))}
+          </ul>
+        </div>
       )}
-    </motion.section>
+    </section>
   );
 }

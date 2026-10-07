@@ -37,6 +37,8 @@ export function readMaterialUpload(
           'UPLOAD_INVALID',
           'Envie apenas um arquivo.',
         );
+        stream.resume();
+        return;
       }
       const chunks: Buffer[] = [];
       let size = 0;
@@ -61,7 +63,7 @@ export function readMaterialUpload(
             'O arquivo está vazio.',
           );
         }
-        if (fileCount === 1) {
+        if (!failure) {
           uploaded = {
             name: info.filename,
             declaredMime: info.mimeType,

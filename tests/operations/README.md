@@ -10,7 +10,7 @@ Use uma implantação isolada com banco e bucket próprios, dados sintéticos e 
 4. Repita com geração de prova e correção discursiva; confira uma única tentativa, uma revisão corrente e histórico preservado.
 5. Registre duração, tentativas, falhas e qualquer operação que não se recupere. Não considere aprovado apenas porque o processo reiniciou.
 
-Os testes `apps/api/test/jobs/operations.integration.spec.ts` cobrem retry/fence sem matar o processo. O ensaio físico acima ainda precisa ser executado no staging.
+Os testes `apps/api/test/jobs/operations.integration.spec.ts` cobrem retry/fence. O roteiro automatizado abaixo também mata processos com dispatcher e handlers reais, usando IA fake; não comprova recuperação de chamada paga ou desligamento da máquina inteira.
 
 Para cada interrupção, salve a linha de `operation` antes de parar o worker, após o lease expirar e após a recuperação. Consulte pelo ID concreto da operação, sem copiar dados pessoais para o relatório:
 
@@ -39,7 +39,15 @@ Uma operação recuperada deve terminar uma vez em `completed`; `fence_version` 
 4. Confirme novamente os 404, recomendações invalidadas e nenhum download do material excluído. Inicie o worker e verifique a purga dentro da janela de 24 horas.
 5. Interrompa temporariamente o acesso ao bucket durante a purga; o registro deve continuar `pending`, e o acesso continuar revogado. Restaure o bucket e confira retry e `purged`.
 
-`apps/api/test/deletion/purge.integration.spec.ts` injeta uma falha de storage e verifica retry local. O ensaio completo do bucket S3 e do restore em staging ainda precisa ser executado.
+`apps/api/test/deletion/purge.integration.spec.ts` injeta falha de storage. O roteiro automatizado executa pg_dump/pg_restore e falha real do filesystem local; o ensaio integral do bucket S3 continua pendente.
+
+## Ensaio local automatizado
+
+Com Docker Desktop e a imagem `projeto-educacional:local` construída, execute na raiz `.\tests\operations\run-local.ps1 -Quality`. O script cria rede interna e containers únicos sem portas públicas e remove somente os recursos criados. Usa dependências Linux da imagem e bancos descartáveis `study_operations_*`; recusa banco de aplicação.
+
+Quatro interrupções físicas cobrem chat antes do despacho, chat após I/O, prova e correção após I/O. O lease é antecipado explicitamente no banco de teste para evitar espera de 180 segundos. Verificações exigem um evento final, uma tentativa e uma revisão corrente. O restore copia arquivos sintéticos, reimporta exclusões posteriores ao dump, reaplica o journal, confirma acesso revogado e impede purga durante falha real de caminho. Após recuperação, os três registros devem estar purgados e o arquivo ausente.
+
+`-Quality` executa também lint, tipos, Vitest, instrumentos, coletor sem custo e builds. Relatórios ficam em `test-results/operations/<rodada>/`. As quatro interrupções e o restore local passaram em 01/10/2026. S3, leitor de tela (`accessibility.md`) e revisão humana de IA continuam pendentes.
 
 No banco restaurado, rode estas consultas antes de iniciar a API, imediatamente após o replay e após a purga. Use IDs sintéticos do ensaio. A consulta ao journal confirma que a cópia separada inclui exclusões posteriores ao backup:
 

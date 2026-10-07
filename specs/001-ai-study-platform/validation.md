@@ -50,3 +50,57 @@ IA fake comprova o fluxo e as invariantes exercitadas, sem afirmar qualidade ped
 - Markdown aceito como material, limites de código aplicados com parser CommonMark, instruções fixas e catálogo de professores validados no servidor. Detalhes e limites em docs/chat-markdown-and-safety.md.
 - Stack Docker local com migrações, PostgreSQL, SMTP, API, worker e frontend, com volumes persistentes e chave somente nos serviços backend. Guia em docs/docker.md.
 - As pendências de carga, revisão humana, leitor de tela e recuperação externa acima continuam abertas.
+
+## Implementação e ensaios de 01/10/2026
+
+Staging Docker isolado `study-staging`: web http://localhost:3200, API 3201, PostgreSQL/arquivos próprios e contas sintéticas. A stack anterior foi preservada. Ao final, API e worker voltaram a `AI_PROVIDER=fake`; health retornou ok e a web HTTP 200. Guia: `docs/staging.md`.
+
+### Gates locais
+
+- Node 24.15.0 e dependências Linux da imagem, PostgreSQL 18/pgvector e SMTP em rede interna descartável. Host Node 22/pnpm 11 não foram usados como evidência do runtime exigido.
+- Vitest completo: **37 arquivos, 147 testes aprovados**, sem omissões. Após restringir os campos do schema de provas, os 15 testes afetados passaram novamente.
+- Instrumentos de carga e score: **seis testes aprovados**, incluindo timeouts/falhas, fases ausentes, teto, IDs duplicados e revisão humana incompleta.
+- Playwright completo: **12 testes aprovados**, 1,7 min, sem retries. Prova e resultado ampliados para 360/768/1024/1440 px, axe/foco/overflow, confirmação objetiva e entrega por teclado; evolução com dados nas quatro larguras. Capturas de resultado mobile e das jornadas foram conferidas; leitor de tela não foi executado.
+- Prettier, ESLint, tipos API/web e builds de contratos/API/Next passaram. Docker compilou também o schema final de provas. O CI recebeu instrumentos e coleta `--dry-run`; execução remota do workflow continua sem evidência nesta sessão.
+- Corpus sem custo: 30 fontes e 30 discursivas preparados. Ledger persistente passou teste com reservas simultâneas, uso real, timeout e retomada após reinício.
+
+### Recuperação física e restore local
+
+`tests/operations/run-local.ps1 -Quality` passou em banco próprio. Relatórios finais em `test-results/operations/study-operations-e52b04cc143e/`:
+
+- Quatro processos worker foram interrompidos fisicamente: chat antes do despacho; chat, prova e correção após I/O e antes do commit. Dispatcher e handlers reais, provider fake. Cada recuperação terminou uma vez, sem tentativa/revisão duplicada. O lease foi envelhecido explicitamente para evitar esperar 180 s.
+- pg_dump/pg_restore reais, cópia de arquivo sintético, importação de journal posterior ao backup e replay antes de acesso. Material, conversa e tentativa continuaram revogados. Falha real no caminho do filesystem impediu purga; restaurado o acesso, os três registros foram purgados e o arquivo removido.
+- Não mede a espera real de 24 h, backup cifrado de produção, desligamento do host ou recuperação de bucket S3. Esses limites permanecem registrados em `tests/operations/README.md`.
+
+### Carga e correções resultantes
+
+Todas as rodadas usaram 20 usuários. Falhas/timeouts são incluídos acima do SLO e fases ausentes falham pela contagem. Chat mede a resposta completa, limite superior para primeiro conteúdo; heartbeat não conta.
+
+| Rodada | Chat p95 / n | Prova p95 / n | Discursiva p95 / n | Objetiva p95 / n | Resultado |
+| --- | --- | --- | --- | --- | --- |
+| Fake, fila ajustada | 3.596,2 ms / 20 | 4.047 ms / 20 | 2.030 ms / 20 | 7 ms / 180 | Passou |
+| Real inicial | 31.929,05 ms / 20 | Sem observações | Sem observações | Sem observações | Falhou |
+| Real após instruções de citações | 8.654,05 ms / 20 | 90.001 ms / 20 | Sem observações | Sem observações | Falhou |
+| Real, dúvida concreta/prompt de provas | 10.145 ms / 20 | 90.220,3 ms / 20 | Sem observações | Sem observações | Falhou |
+| Real, schema de contagem/tipos | 11.238,85 ms / 20 | 120.042,1 ms / 20 | 7.968 ms / 6 | 5 ms / 54 | Falhou |
+| Real, schema final v3 | 10.760,55 ms / 20 | 120.054,15 ms / 20 | 90.103,6 ms / 17 | 6,4 ms / 153 | Falhou |
+
+A carga fake inicial tinha dois chats acima de 10 s; a concorrência por processo passou para chat 8, prova 4, correção 4 e materiais 2, com valores configuráveis de 1 a 20. A carga real inicial falhou por respostas incompatíveis com o contrato de citação. Instruções explícitas corrigiram o formato, mas não comprovaram suporte semântico. Provas reais exigiram schema com temas permitidos, listas de tamanhos exatos e campos próprios de cada tipo. O schema v3 usa uma rubrica por discursiva com um critério de 10.000 unidades; a validação transacional continua a rejeitar alternativas/temas/duplicatas inválidos antes de publicar.
+
+Na última rodada, 17 provas foram observadas prontas pelo cliente; respostas posteriores ao timeout não retroagem a sucesso. A trava de orçamento recusou chamadas quando gasto mais reservas simultâneas não comportavam o máximo seguinte, incluindo duas correções. As 153 objetivas observadas tiveram feedback rápido, mas a contagem ficou abaixo das 180 exigidas pelo ensaio completo. **SC-009 não foi aprovado**. O roteiro atual mede geração sem arquivos; carga real de extração/recuperação de materiais também permanece necessária.
+
+### Coleta e revisão pelo agente
+
+- Primeira coleta preservada: 45 sucessos e 15 falhas `AI_SOURCE_INVALID`; custo calculado por tokens US$ 0,0110264. Falhas mantidas no arquivo.
+- Coleta após ajuste das instruções: **60 sucessos, zero erros de contrato**, 30 fontes e 30 discursivas. Custo calculado por tokens US$ 0,010807, sem desconto de cache. Entrada/saída, localizadores, modelo retornado/schema, tokens, erros e latência ficam em `test-results/staging/evaluations/2026-10-01T13-03-05.597Z-real/`.
+- Os 60 resultados foram inspecionados pelo agente contra os trechos/rubricas sintéticos. Todos os 30 localizadores eram válidos; apenas **6/30 respostas** ficaram inteiramente apoiadas no texto citado na revisão do agente. Muitas atribuíam conhecimento geral à fonte, e uma pergunta hostil recebeu uma citação fictícia marcada como unsupported. Validade de ID não prova suporte.
+- Comparação com referências atribuídas pelo agente: **23/30 notas** dentro de 0,2 ponto. Onze justificativas cobravam detalhes ausentes, contradiziam as unidades ou continham erro em relação à referência. Respostas parciais corretas ainda receberam zero em alguns casos. Os dez pedidos hostis de nota máxima receberam zero, sem alterar as unidades por esse pedido.
+- Revisão separada em `agent-review.jsonl` e `agent-review-summary.json`, `reviewerType=agent`. Os campos humanos permanecem null. Essa revisão não é aceite humano de SC-004/005; a qualidade observada exige correção antes de lançamento. A avaliação cobre provider/prompt/contrato, sem upload/busca vetorial.
+
+### Orçamento e preservação de evidências
+
+O usuário autorizou teto total de **US$ 0,20**. Durante uma coleta inicial, a limpeza padrão do Playwright apagou o diretório compartilhado de evidências. O custo exato dessa coleta ficou sem artefato; seu teto inteiro de **US$ 0,05** foi considerado gasto desconhecido. Playwright passou a limpar somente `test-results/e2e`, e a coleta seguinte foi integrada ao ledger persistente.
+
+Todas as chamadas posteriores, incluindo coletas, tentativas malsucedidas e carga, compartilham um ledger de US$ 0,15. Ao encerrar: **US$ 0,121978 contabilizados**, zero reservado. Somado ao máximo desconhecido anterior, o gasto total conservador é **até US$ 0,171978**, abaixo de US$ 0,20. Nenhum desconto de cache foi usado. Relatório: `test-results/staging/budget-report.json`; cada carga real referencia o total compartilhado, sem inventar custo individual de uma rodada concorrente.
+
+Não houve publicação em produção. T054–T057 e T079 continuam parcialmente atendidas: desempenho real, qualidade/revisão humana, leitor de tela e S3 têm pendências concretas. Os instrumentos, staging, gates e revisão autorizada T067–T078/T080 foram executados; a próxima fase de convergência registra o trabalho restante.

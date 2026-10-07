@@ -1000,7 +1000,71 @@
   }
 }
 .withFiles {
-  grid-template-columns: minmax(0, 1fr) 292px;
+  grid-template-columns: minmax(0, 1fr) 8px var(--materials-panel-width, 292px);
+}
+.withPdf {
+  grid-template-columns: minmax(0, var(--chat-panel-width, 45%)) 8px minmax(
+      0,
+      1fr
+    );
+}
+.chatLayout[data-resizing='true'],
+.chatLayout[data-resizing='true'] * {
+  cursor: col-resize;
+  user-select: none;
+}
+.pdfPane {
+  min-width: 0;
+  min-height: 0;
+  overflow: hidden;
+}
+.pdfContext {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.75rem;
+  margin-bottom: 0.75rem;
+  border: 1px solid var(--line);
+  border-radius: 0.75rem;
+  background: var(--sage);
+  font-size: 0.75rem;
+}
+.pdfContext > div {
+  display: grid;
+  flex: 1;
+  min-width: 0;
+  gap: 0.25rem;
+}
+.pdfContext span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--muted);
+}
+.withPdf .messageColumn {
+  padding: 1.5rem 1rem;
+}
+.withPdf .chatComposerWrap {
+  padding-inline: 1rem;
+}
+.withPdf .chatWelcome {
+  min-height: 16rem;
+}
+.withPdf .chatWelcome h3 {
+  font-size: 1.35rem;
+}
+@media (max-width: 1000px) {
+  .withPdf {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: max(460px, 65dvh) max(650px, 85dvh);
+    overflow-y: auto;
+    overscroll-behavior-y: contain;
+    scroll-padding-block: 1rem;
+  }
+  .pdfPane {
+    border-left: 0;
+    border-top: 1px solid var(--line);
+  }
 }
 .chatMain {
   position: relative;
@@ -1446,7 +1510,6 @@
   min-height: 0;
   overflow-y: auto;
   background: #f6f7f0;
-  border-left: 1px solid #e4e6dd;
   padding: 20px 16px;
 }
 .filesSheet {

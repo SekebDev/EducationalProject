@@ -91,7 +91,7 @@ test('evolução filtra nível e período e explica amostra insuficiente', async
     await expect(page.getByRole('table')).not.toBeVisible();
     await page.getByText('Ver dados do gráfico', { exact: true }).click();
     await expect(page.getByRole('table')).toContainText('Superior');
-    for (const width of [360, 1440]) {
+    for (const width of [360, 768, 1024, 1440]) {
       await page.setViewportSize({ width, height: 900 });
       expect(
         await page.evaluate(

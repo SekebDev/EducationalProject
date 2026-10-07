@@ -1,10 +1,13 @@
 import pg from 'pg';
+import type { EducationalSkill, ResponseDepth } from '@study/contracts';
 import { readConfig } from '../../infrastructure/config.js';
 import { createPool } from '../../infrastructure/db/pool.js';
+import { PublicError } from '../../infrastructure/http/public-error.js';
 import { createAiProvider } from '../../infrastructure/ai/provider.js';
 import type { JobHandler } from '../../infrastructure/jobs/dispatcher.js';
 import { personalityStyleAtVersion } from './personalities.js';
 import type { PersonalityKey } from './personalities.js';
+import { educationalSkillAtVersion } from './educational-skills.js';
 import { retrieveChunks } from '../materials/retrieval.js';
 import { validateChatCitations } from './sources.service.js';
 import {
@@ -18,6 +21,9 @@ type ChatRow = {
   turn_id: string;
   personality_snapshot: PersonalityKey;
   personality_version_snapshot: number;
+  skill_snapshot: EducationalSkill;
+  skill_version_snapshot: number;
+  response_depth_snapshot: ResponseDepth;
   question: string;
   source_snapshot: Array<{ id: string; version: number }>;
 };
@@ -40,10 +46,18 @@ export function filterActiveHistory(
 
 export function createChatJobHandler(databaseUrl: string): JobHandler {
   const pool = createPool(databaseUrl);
-  const provider = createAiProvider(readConfig(process.env));
-  return async (lease) => {
-    const loaded = await pool.query<ChatRow>(
-      `SELECT assistant.id,assistant.conversation_id,assistant.turn_id,assistant.personality_snapshot,assistant.personality_version_snapshot,assistant.source_snapshot,
+  const config = readConfig(process.env);
+  const provider = createAiProvider(config);
+  const model =
+    config.aiProvider === 'openai'
+      ? (process.env.OPENAI_CHAT_MODEL ?? 'gpt-6-luna')
+      : 'fake';
+  const generate = async (
+    lease: Parameters<JobHandler>[0],
+    connection: pg.PoolClient,
+  ) => {
+    const loaded = await connection.query<ChatRow>(
+      `SELECT assistant.id,assistant.conversation_id,assistant.turn_id,assistant.personality_snapshot,assistant.personality_version_snapshot,assistant.skill_snapshot,assistant.skill_version_snapshot,assistant.response_depth_snapshot,assistant.source_snapshot,
          question.content AS question FROM message assistant
          JOIN conversation c ON c.id=assistant.conversation_id AND c.owner_id=assistant.owner_id
          JOIN message question ON question.turn_id=assistant.turn_id AND question.role='user'
@@ -54,11 +68,16 @@ export function createChatJobHandler(databaseUrl: string): JobHandler {
     if (!message) {
       throw new Error('CHAT_RESOURCE_UNAVAILABLE');
     }
-    await pool.query(
+    // Resolve the saved catalog version, including during retries; conversation edits cannot change this turn.
+    educationalSkillAtVersion(
+      message.skill_snapshot,
+      message.skill_version_snapshot,
+    );
+    await connection.query(
       "UPDATE message SET state='generating' WHERE owner_id=$1 AND id=$2 AND state IN ('queued','failed')",
       [lease.ownerId, lease.resourceId],
     );
-    const history = await pool.query<{
+    const history = await connection.query<{
       content: string;
       source_snapshot: Array<{ id: string; version: number }>;
     }>(
@@ -74,8 +93,8 @@ export function createChatJobHandler(databaseUrl: string): JobHandler {
       ),
     ];
     const availableSources = historySourceIds.length
-      ? await pool.query<{ id: string; version: number }>(
-          "SELECT id,version FROM material WHERE owner_id=$1 AND conversation_id=$2 AND id=ANY($3::uuid[]) AND deleted_at IS NULL AND state='ready'",
+      ? await connection.query<{ id: string; version: number }>(
+          "SELECT id,version FROM material WHERE owner_id=$1 AND conversation_id=$2 AND id=ANY($3::uuid[]) AND deleted_at IS NULL AND (state='ready' OR detected_mime='application/pdf')",
           [lease.ownerId, message.conversation_id, historySourceIds],
         )
       : { rows: [] };
@@ -96,6 +115,9 @@ export function createChatJobHandler(databaseUrl: string): JobHandler {
       enforceStudyChatOutput(
         await provider.chat({
           question: message.question,
+          skill: message.skill_snapshot,
+          skillVersion: message.skill_version_snapshot,
+          responseDepth: message.response_depth_snapshot,
           personality: personalityStyleAtVersion(
             message.personality_snapshot,
             message.personality_version_snapshot,
@@ -158,8 +180,8 @@ export function createChatJobHandler(databaseUrl: string): JobHandler {
             lease.ownerId,
             lease.resourceId,
             safeContent,
-            readConfig(process.env).aiProvider,
-            `chat-v2-personality-${message.personality_version_snapshot}`,
+            model,
+            `chat-v3-personality-${message.personality_version_snapshot}-skill-${message.skill_version_snapshot}-${message.skill_snapshot}-depth-${message.response_depth_snapshot}`,
             JSON.stringify(references),
           ],
         );
@@ -168,5 +190,50 @@ export function createChatJobHandler(databaseUrl: string): JobHandler {
         }
       },
     };
+  };
+  return async (lease) => {
+    const connection = await pool.connect();
+    let key: string | null = null;
+    let releaseError: Error | undefined;
+    try {
+      const message = await connection.query<{ conversation_id: string }>(
+        'SELECT conversation_id FROM message WHERE owner_id=$1 AND id=$2',
+        [lease.ownerId, lease.resourceId],
+      );
+      if (!message.rows[0]) {
+        throw new Error('CHAT_RESOURCE_UNAVAILABLE');
+      }
+      const candidate = `conversation-turn:${lease.ownerId}:${message.rows[0].conversation_id}`;
+      const lock = await connection.query<{ locked: boolean }>(
+        'SELECT pg_try_advisory_lock(hashtextextended($1,0)) AS locked',
+        [candidate],
+      );
+      if (!lock.rows[0]!.locked) {
+        throw new PublicError(
+          409,
+          'TURN_IN_PROGRESS',
+          'A explicação desta conversa ainda está em andamento.',
+          true,
+        );
+      }
+      key = candidate;
+      return await generate(lease, connection);
+    } finally {
+      try {
+        if (key) {
+          await connection.query(
+            'SELECT pg_advisory_unlock(hashtextextended($1,0))',
+            [key],
+          );
+        }
+      } catch (error) {
+        releaseError =
+          error instanceof Error
+            ? error
+            : new Error('CONVERSATION_LOCK_RELEASE_FAILED');
+      } finally {
+        connection.release(releaseError);
+      }
+    }
   };
 }

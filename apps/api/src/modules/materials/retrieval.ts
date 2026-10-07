@@ -2,6 +2,7 @@ import { readConfig } from '../../infrastructure/config.js';
 import { createAiProvider } from '../../infrastructure/ai/provider.js';
 import { createPool } from '../../infrastructure/db/pool.js';
 import type { ExtractedSegment } from './extract.js';
+import { ExtractionError } from './extract.js';
 
 export type SourceChunk = {
   id: string;
@@ -31,6 +32,7 @@ export function chunkSegments(
         text: segment.text.slice(start, end),
         locator: segment.locator,
       });
+      if (chunks.length > 2_000) throw new ExtractionError('MATERIAL_CHUNK_LIMIT');
       start = end;
     }
   }
@@ -53,12 +55,15 @@ export async function retrieveChunks(
   selected: Array<{ id: string; version: number }>,
   question: string,
   limit = 8,
+  signal?: AbortSignal,
 ): Promise<SourceChunk[]> {
+  signal?.throwIfAborted();
   if (selected.length === 0) {
     return [];
   }
   const provider = createAiProvider(readConfig(process.env));
-  const embedding = (await provider.embed([question]))[0];
+  const embedding = (await provider.embed([question], signal))[0];
+  signal?.throwIfAborted();
   if (!embedding) {
     throw new Error('EMBEDDING_INVALID');
   }

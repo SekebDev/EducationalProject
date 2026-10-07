@@ -1,0 +1,873 @@
+.page {
+  --landing-ink: #193f34;
+  --landing-paper: #f1eedf;
+  --landing-hand: 'Caderno Hand', cursive;
+  position: relative;
+  min-width: 0;
+  width: 100%;
+  overflow: clip;
+  background: var(--landing-paper);
+  color: var(--landing-ink);
+  font-family: var(--font-body);
+  isolation: isolate;
+  -webkit-user-select: none;
+  user-select: none;
+}
+.page a {
+  color: inherit;
+}
+.page a:focus-visible,
+.page button:focus-visible {
+  outline: 3px solid #a9693d;
+  outline-offset: 5px;
+}
+.skip {
+  position: fixed;
+  z-index: 100;
+  top: 10px;
+  left: 10px;
+  padding: 12px 18px;
+  background: #fffefa;
+  color: #193f34;
+  border: 2px solid #193f34;
+  transform: translateY(-160%);
+  opacity: 0;
+}
+.skip:focus {
+  transform: translateY(0);
+  opacity: 1;
+}
+.brand {
+  display: inline-flex;
+  flex: none;
+  font-family: var(--font-display);
+  font-size: 1.85rem;
+  font-weight: 760;
+  letter-spacing: -0.035em;
+  line-height: 1;
+  text-decoration: none;
+}
+.cta,
+.ctaLight {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  min-height: 56px;
+  padding: 15px 25px;
+  border-radius: 6px;
+  background: #193f34;
+  color: #fffefa !important;
+  font-size: 0.94rem;
+  font-weight: 740;
+  text-decoration: none;
+  box-shadow: 0 10px 22px rgb(25 63 52 / 14%);
+  transition:
+    transform 220ms ease-out,
+    background-color 220ms ease-out;
+}
+.cta:hover,
+.ctaLight:hover {
+  background: #0d2e24;
+  transform: translateY(-3px);
+}
+.cta:active,
+.ctaLight:active {
+  transform: translateY(0);
+}
+
+.chapter {
+  position: relative;
+  padding: clamp(100px, 10vw, 150px) max(36px, calc((100vw - 1280px) / 2));
+}
+.chapter > * {
+  min-width: 0;
+}
+.question,
+.materials {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1.1fr);
+  align-items: center;
+  gap: clamp(40px, 6vw, 95px);
+}
+.question {
+  background: #f1eedf;
+  grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.1fr);
+}
+.question .chapterCopy h2 {
+  font-family: var(--font-body);
+  font-size: clamp(3rem, 4.3vw, 4.6rem);
+  font-weight: 800;
+  line-height: 1.13;
+  letter-spacing: -0.035em;
+  text-wrap: initial;
+}
+.question .chapterCopy p {
+  max-width: 33ch;
+}
+.question .questionHint {
+  margin-top: 17px;
+  font-size: 0.85rem;
+  color: #51684f;
+}
+.question .chapterNote {
+  position: relative;
+  margin-top: 40px;
+  padding: 0;
+  background: none;
+  font-size: 1.8rem;
+  color: #43643c;
+  transform: none;
+}
+.question .chapterNote::after {
+  content: '';
+  position: absolute;
+  width: 100px;
+  height: 50px;
+  right: -110px;
+  top: -15px;
+  background: #6c835e;
+  mask: url('/landing/school-kit/decorations/loop-arrow.svg') center / contain
+    no-repeat;
+  transform: rotate(-15deg);
+  pointer-events: none;
+}
+.materials {
+  background: #dce4d1;
+}
+.materials::before,
+.closing::before {
+  content: '';
+  position: absolute;
+  top: -12px;
+  left: 0;
+  width: 100%;
+  height: 24px;
+  background: inherit;
+  mask: url('/landing/school-kit/images/torn-strip-cream.webp') center / 100%
+    100% no-repeat;
+  pointer-events: none;
+}
+.chapterCopy {
+  position: relative;
+  max-width: 540px;
+}
+.chapterCopy h2,
+.evolutionHeading h2 {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: clamp(2.9rem, 4.7vw, 4.75rem);
+  font-weight: 560;
+  letter-spacing: -0.035em;
+  line-height: 1.08;
+  text-wrap: balance;
+}
+.chapterCopy h2 em,
+.evolutionHeading h2 em {
+  font-weight: 480;
+}
+.chapterCopy p,
+.evolutionHeading p {
+  max-width: 48ch;
+  margin: 25px 0 0;
+  color: #3d5548;
+  font-size: 1.08rem;
+  line-height: 1.75;
+}
+.chapterNote {
+  display: inline-block;
+  margin-top: 28px;
+  padding: 11px 24px 15px;
+  background: url('/landing/school-kit/images/torn-strip-yellow.webp') center /
+    100% 100% no-repeat;
+  font-family: var(--landing-hand);
+  font-size: 1.8rem;
+  line-height: 1.2;
+  transform: rotate(-3deg);
+}
+
+.chatScene {
+  position: relative;
+  width: 100%;
+  max-width: 660px;
+  padding: 13% 12% 12% 15%;
+  background: url('/landing/school-kit/images/paper-ruled-cream.webp') center /
+    100% 100% no-repeat;
+  filter: drop-shadow(10px 18px 13px rgb(52 55 39 / 12%));
+  transform: rotate(2deg);
+}
+.chatTop {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  font-size: 0.69rem;
+  color: #405b4d;
+}
+.chatBrand {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 750;
+  font-size: 0.88rem;
+}
+.chatQuestion {
+  margin: 23px 0 22px;
+  font-family: var(--landing-hand);
+  font-size: clamp(1.65rem, 2.35vw, 2.1rem);
+  font-weight: 600;
+  line-height: 1.1;
+}
+.handLabel {
+  display: block;
+  margin-bottom: 8px;
+  font-family: var(--font-body);
+  font-size: 0.64rem;
+  font-weight: 650;
+  line-height: 1.5;
+  color: #4e6154;
+}
+.chatAnswer {
+  position: relative;
+  padding-left: 26px;
+  font-size: 0.9rem;
+  line-height: 1.65;
+}
+.chatAnswer strong {
+  font-family: var(--font-display);
+  font-size: 1.45rem;
+  font-weight: 620;
+}
+.chatAnswer p {
+  margin: 9px 0 0;
+}
+.aiMark {
+  position: absolute;
+  top: 5px;
+  left: 0;
+  color: #355740;
+}
+.teacherStyles {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px 15px;
+  margin-top: 25px;
+  font-size: 0.69rem;
+  font-weight: 650;
+}
+.teacherStyles span:first-child {
+  background: #e7eb95;
+  outline: 4px solid #e7eb95;
+  transform: rotate(-2deg);
+}
+.exampleLabel,
+.illustrativeNote {
+  display: block;
+  margin-top: 18px;
+  color: #4b5b4d;
+  font-size: 0.69rem;
+  line-height: 1.6;
+}
+.chatAnnotation {
+  position: absolute;
+  bottom: -10px;
+  right: 8%;
+  padding: 10px 28px;
+  background: url('/landing/school-kit/images/torn-strip-sage.webp') center /
+    100% 100% no-repeat;
+  font-family: var(--landing-hand);
+  font-size: 1.8rem;
+  transform: rotate(-5deg);
+}
+
+.materialsScene {
+  position: relative;
+  padding: 10px 10px 28px;
+}
+.fileBoard,
+.questionPaper,
+.correctionPaper,
+.closingPaper {
+  --clean-paper-color: #fffef7;
+  isolation: isolate;
+}
+.fileBoard::before,
+.questionPaper::before,
+.correctionPaper::before,
+.closingPaper::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background: var(--clean-paper-color);
+  mask: var(--clean-paper-mask) center / 100% 100% no-repeat;
+  pointer-events: none;
+}
+.fileBoard {
+  --clean-paper-mask: url('/landing/school-kit/images/paper-ruled-ivory.webp');
+  position: relative;
+  padding: 13% 13% 14%;
+  background: none;
+  filter: drop-shadow(-5px 12px 12px rgb(41 58 33 / 9%));
+  transform: rotate(-3deg);
+}
+.fileBoardHead {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding-bottom: 20px;
+  font-family: var(--font-display);
+  font-size: 1.55rem;
+  font-weight: 550;
+}
+.fileRow {
+  display: flex;
+  align-items: center;
+  gap: 13px;
+  padding: 17px 0;
+  border-bottom: 1px solid rgb(57 88 64 / 20%);
+  font-size: 0.85rem;
+}
+.fileRow > span:nth-child(2) {
+  flex: 1;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.fileRow > svg {
+  flex: none;
+}
+.fileType {
+  min-width: 42px;
+  padding: 5px 0;
+  font-size: 0.64rem;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+  text-align: center;
+  background: #dce4d1;
+}
+.fileBoardFoot {
+  margin-top: 22px;
+  font-size: 0.7rem;
+  line-height: 1.6;
+}
+.fileAnnotation {
+  display: block;
+  margin: 8px 0 0 15%;
+  font-family: var(--landing-hand);
+  font-size: 1.8rem;
+  line-height: 1.06;
+  transform: rotate(-3deg);
+}
+.materialsScene > .exampleLabel {
+  position: absolute;
+  bottom: 0;
+  left: 15%;
+}
+.materialsAside {
+  max-width: 29ch !important;
+  font-family: var(--landing-hand);
+  font-size: 1.75rem !important;
+  line-height: 1.18 !important;
+  color: #264c39 !important;
+}
+
+.practice {
+  background: #f1eedf;
+}
+.practice > .chapterCopy {
+  display: grid;
+  grid-template-columns: 0.9fr 1.1fr;
+  align-items: center;
+  max-width: none;
+  gap: clamp(40px, 6vw, 100px);
+  margin-bottom: 65px;
+}
+.practice > .chapterCopy p {
+  margin-top: 0;
+}
+.practiceScene {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 25px;
+  align-items: stretch;
+  position: relative;
+  max-width: 1190px;
+  margin-inline: auto;
+}
+.questionPaper,
+.correctionPaper {
+  --clean-paper-mask: url('/landing/school-kit/images/paper-ruled-warm.webp');
+  position: relative;
+  min-width: 0;
+  padding: 12% 13% 15%;
+  background: none;
+  filter: drop-shadow(6px 13px 12px rgb(52 55 39 / 9%));
+  transform: rotate(-2.5deg);
+}
+.correctionPaper {
+  --clean-paper-color: #edf3e8;
+  --clean-paper-mask: url('/landing/school-kit/images/paper-ruled-sage.webp');
+  transform: rotate(3deg);
+}
+.paperTop {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  font-size: 0.72rem;
+  font-weight: 750;
+}
+.questionPaper h3 {
+  max-width: 22ch;
+  margin: 23px 0 20px;
+  font-family: var(--font-display);
+  font-size: clamp(1.4rem, 2.2vw, 2rem);
+  font-weight: 560;
+  line-height: 1.2;
+}
+.answerLine {
+  padding-top: 10px;
+  font-family: var(--landing-hand);
+  font-size: 1.9rem;
+  line-height: 1.24;
+}
+.correctionPaper strong {
+  display: block;
+  margin-top: 29px;
+  font-family: var(--landing-hand);
+  font-size: 2.15rem;
+  font-weight: 650;
+  line-height: 1.15;
+}
+.correctionPaper p {
+  max-width: 39ch;
+  margin: 15px 0 0;
+  font-size: 0.92rem;
+  line-height: 1.65;
+}
+.practiceScene > .exampleLabel {
+  grid-column: 1 / -1;
+  text-align: center;
+  margin-top: 12px;
+}
+
+.evolution {
+  display: grid;
+  grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.1fr);
+  align-items: center;
+  gap: 25px 80px;
+  background: #192327 url('/landing/school-kit/images/chalkboard.webp') center /
+    cover;
+  color: #f1eedf;
+}
+.evolutionHeading h2 {
+  font-size: clamp(2.9rem, 4.4vw, 4.5rem);
+}
+.evolutionHeading h2 em {
+  color: #dfea92;
+}
+.evolutionHeading p {
+  color: #c5cfbf;
+}
+.progressBoard {
+  min-width: 0;
+  position: relative;
+  padding: 14px 0;
+}
+.progressHead {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 5px 20px;
+  padding-bottom: 24px;
+  border-bottom: 1px solid rgb(241 238 223 / 30%);
+  font-family: var(--landing-hand);
+  font-size: 2rem;
+}
+.progressRow {
+  display: grid;
+  grid-template-columns: 1fr 1.2fr;
+  align-items: center;
+  gap: 25px;
+  padding: 22px 0;
+}
+.progressRow > div {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.progressRow strong {
+  font-size: 1rem;
+  font-weight: 600;
+}
+.progressRow > div span {
+  color: #c5cfbf;
+  font-size: 0.73rem;
+}
+.progressTrack {
+  display: block;
+  height: 15px;
+  background: rgb(241 238 223 / 12%);
+  mask: url('/landing/school-kit/images/torn-strip-cream.webp') center / 100%
+    100% no-repeat;
+}
+.progressTrack > span {
+  display: block;
+  height: 100%;
+  background: #dfea92;
+}
+.progressRow:nth-child(3) .progressTrack > span {
+  background: #c3d6ba;
+}
+.progressRow:nth-child(4) .progressTrack > span {
+  background: #eea7c1;
+}
+.nextStep {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 8px 20px;
+  margin-top: 17px;
+  padding-top: 24px;
+  border-top: 1px solid rgb(241 238 223 / 30%);
+}
+.nextStep > span {
+  grid-column: 1 / -1;
+  color: #c5cfbf;
+  font-size: 0.7rem;
+}
+.nextStep strong {
+  font-family: var(--landing-hand);
+  font-size: 1.7rem;
+  font-weight: 550;
+  line-height: 1.1;
+}
+.nextStep svg {
+  align-self: center;
+}
+.illustrativeNote {
+  grid-column: 2;
+  color: #c5cfbf;
+  margin: 0;
+}
+
+.closing {
+  position: relative;
+  display: grid;
+  grid-template-columns: 1.1fr 0.9fr;
+  align-items: center;
+  gap: 60px;
+  padding: 110px max(36px, calc((100vw - 1280px) / 2));
+  background: #e6ec9a;
+  color: #193f34;
+}
+.closingCopy h2 {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: clamp(3.4rem, 5.6vw, 5.5rem);
+  font-weight: 570;
+  line-height: 1.05;
+  letter-spacing: -0.035em;
+}
+.closingCopy p {
+  max-width: 43ch;
+  margin: 24px 0 29px;
+  color: #3d5548;
+  font-size: 1.05rem;
+  line-height: 1.7;
+}
+.closingPaper {
+  --clean-paper-mask: url('/landing/school-kit/images/paper-ruled-cream.webp');
+  position: relative;
+  padding: 15% 18% 17%;
+  background: none;
+  filter: drop-shadow(6px 14px 12px rgb(51 65 29 / 9%));
+  transform: rotate(3deg);
+  font-family: var(--landing-hand);
+}
+.closingPaper > span {
+  font-size: 1.35rem;
+}
+.closingPaper strong {
+  display: block;
+  margin: 18px 0;
+  font-size: clamp(2.2rem, 3.6vw, 3.5rem);
+  font-weight: 650;
+  line-height: 0.95;
+}
+.closingPaper p {
+  margin: 0;
+  font-size: 1.65rem;
+  line-height: 1.1;
+}
+.footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+  padding: 32px max(36px, calc((100vw - 1280px) / 2));
+  background: #193f34;
+  color: #dce4d1;
+  font-size: 0.8rem;
+}
+.footer a {
+  color: #f1eedf;
+  text-underline-offset: 5px;
+}
+
+@supports (animation-timeline: view()) {
+  @media (prefers-reduced-motion: no-preference) {
+    .correctionPaper {
+      animation: correction-settle 1s linear both;
+      animation-timeline: view();
+      animation-range: entry 0% cover 40%;
+    }
+  }
+}
+@keyframes correction-settle {
+  from {
+    transform: rotate(8deg) translateY(22px);
+  }
+  to {
+    transform: rotate(3deg) translateY(0);
+  }
+}
+
+@media (max-width: 1000px) {
+  .chapter {
+    padding-inline: 36px;
+  }
+  .question,
+  .materials {
+    gap: 35px;
+  }
+  .question .chapterNote::after {
+    display: none;
+  }
+  .chatScene {
+    padding: 13% 11% 13% 14%;
+  }
+  .chatTop {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 5px;
+  }
+  .evolution {
+    gap: 30px 45px;
+  }
+  .closing {
+    gap: 30px;
+  }
+}
+@media (max-width: 760px) {
+  .chapter {
+    padding: 85px 24px;
+  }
+  .question,
+  .materials,
+  .evolution,
+  .closing {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .question,
+  .materials {
+    gap: 48px;
+  }
+  .chapterCopy {
+    max-width: 560px;
+  }
+  .chapterCopy h2,
+  .evolutionHeading h2 {
+    font-size: clamp(2.6rem, 8vw, 3.6rem);
+  }
+  .question .chapterCopy h2 {
+    font-size: clamp(2.55rem, 10.8vw, 3.6rem);
+  }
+  .question .chapterNote {
+    margin-top: 26px;
+  }
+  .chapterCopy p,
+  .evolutionHeading p {
+    font-size: 1rem;
+    margin-top: 22px;
+  }
+  .chatScene {
+    width: min(100%, 560px);
+    justify-self: center;
+    padding: 15% 12% 15% 15%;
+    transform: rotate(1deg);
+  }
+  .chatTop {
+    flex-direction: row;
+    align-items: center;
+  }
+  .chatBrand {
+    font-size: 0.75rem;
+  }
+  .chatQuestion {
+    font-size: 1.9rem;
+  }
+  .chatAnswer {
+    font-size: 0.86rem;
+  }
+  .chatAnnotation {
+    font-size: 1.5rem;
+  }
+  .materials .chapterCopy {
+    grid-row: 1;
+  }
+  .materialsScene {
+    width: min(100%, 570px);
+    justify-self: center;
+    padding-bottom: 24px;
+  }
+  .fileBoardHead {
+    font-size: 1.3rem;
+  }
+  .fileRow {
+    font-size: 0.78rem;
+    padding: 14px 0;
+  }
+  .fileAnnotation {
+    font-size: 1.65rem;
+  }
+  .practice > .chapterCopy {
+    grid-template-columns: 1fr;
+    gap: 23px;
+    margin-bottom: 45px;
+  }
+  .practice > .chapterCopy p {
+    margin-top: 0;
+  }
+  .practiceScene {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 27px;
+    max-width: 560px;
+  }
+  .questionPaper,
+  .correctionPaper {
+    padding: 14% 14% 16%;
+  }
+  .questionPaper h3 {
+    font-size: 1.6rem;
+  }
+  .answerLine {
+    font-size: 1.85rem;
+  }
+  .correctionPaper p {
+    font-size: 0.9rem;
+  }
+  .evolution {
+    gap: 40px;
+  }
+  .progressHead {
+    font-size: 1.8rem;
+  }
+  .progressRow {
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+  }
+  .progressRow strong {
+    font-size: 0.9rem;
+  }
+  .progressRow > div span {
+    font-size: 0.67rem;
+  }
+  .illustrativeNote {
+    grid-column: 1;
+    margin-top: -25px;
+  }
+  .closing {
+    padding: 80px 24px;
+    gap: 35px;
+  }
+  .closingCopy h2 {
+    font-size: clamp(3.1rem, 11vw, 4.5rem);
+  }
+  .closingCopy p {
+    font-size: 1rem;
+  }
+  .closingPaper {
+    width: min(95%, 450px);
+    justify-self: center;
+    padding: 14% 17% 15%;
+    transform: rotate(3deg);
+  }
+  .closingPaper strong {
+    font-size: 2.8rem;
+  }
+  .closingPaper p {
+    font-size: 1.65rem;
+  }
+  .footer {
+    flex-wrap: wrap;
+    padding: 30px 24px;
+    gap: 20px;
+  }
+  .footer > span {
+    flex-basis: 100%;
+    order: 3;
+  }
+  .footer > a:last-child {
+    margin-left: auto;
+  }
+}
+@media (max-width: 400px) {
+  .chatTop {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  .chatQuestion {
+    margin-block: 18px;
+    font-size: 1.6rem;
+  }
+  .chatAnswer {
+    padding-left: 23px;
+    font-size: 0.8rem;
+  }
+  .chatAnswer strong {
+    font-size: 1.25rem;
+  }
+  .teacherStyles {
+    gap: 7px 10px;
+    font-size: 0.62rem;
+  }
+  .fileRow {
+    gap: 9px;
+    font-size: 0.7rem;
+  }
+  .fileType {
+    min-width: 35px;
+    font-size: 0.56rem;
+  }
+  .fileBoardHead {
+    font-size: 1.16rem;
+  }
+  .cta {
+    width: 100%;
+    padding-inline: 15px;
+    font-size: 0.88rem;
+  }
+  .correctionPaper strong {
+    font-size: 1.9rem;
+  }
+  .correctionPaper p {
+    font-size: 0.83rem;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .page *,
+  .page *::before,
+  .page *::after {
+    scroll-behavior: auto !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+  .cta:hover,
+  .cta:active {
+    transform: none;
+  }
+  .correctionPaper {
+    animation: none !important;
+  }
+}

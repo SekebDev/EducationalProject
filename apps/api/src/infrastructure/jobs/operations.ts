@@ -358,8 +358,8 @@ export class OperationRepository {
       );
     }
     if (row.kind === 'answer-chat') {
-      const active = await client.query(
-        `SELECT 1 FROM message m JOIN conversation c ON c.id=m.conversation_id AND c.owner_id=m.owner_id
+      const active = await client.query<{ conversation_id: string }>(
+        `SELECT m.conversation_id FROM message m JOIN conversation c ON c.id=m.conversation_id AND c.owner_id=m.owner_id
            WHERE m.owner_id=$1 AND m.id=$2 AND m.state='failed' AND c.deleted_at IS NULL`,
         [ownerId, row.resource_id],
       );
@@ -368,6 +368,17 @@ export class OperationRepository {
           409,
           'RESOURCE_UNAVAILABLE',
           'A conversa não está mais disponível para repetir a resposta.',
+        );
+      }
+      const turnLock = await client.query<{ locked: boolean }>(
+        'SELECT pg_try_advisory_xact_lock(hashtextextended($1,0)) AS locked',
+        [`conversation-turn:${ownerId}:${active.rows[0]!.conversation_id}`],
+      );
+      if (!turnLock.rows[0]!.locked) {
+        throw new PublicError(
+          409,
+          'TURN_IN_PROGRESS',
+          'A explicação desta conversa ainda está em andamento.',
         );
       }
     }

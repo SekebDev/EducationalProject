@@ -1,0 +1,95 @@
+name: study-staging
+
+x-runtime: &runtime
+  image: projeto-educacional:staging
+  init: true
+  restart: unless-stopped
+  env_file:
+    - ../.env
+  environment: &environment
+    NODE_ENV: development
+    API_HOST: 0.0.0.0
+    API_PORT: 3001
+    DATABASE_URL: postgres://study:study@db:5432/study_staging
+    APP_ORIGIN: http://localhost:3200
+    APP_ADDITIONAL_ORIGINS: http://127.0.0.1:3200
+    AI_PROVIDER: ${STAGING_AI_PROVIDER:-fake}
+    OPENAI_CHAT_MODEL: gpt-6-luna
+    OPENAI_EXAM_MODEL: gpt-6-luna
+    OPENAI_GRADING_MODEL: gpt-6-luna
+    OPENAI_INSIGHTS_MODEL: gpt-6-luna
+    OPENAI_EMBEDDING_MODEL: text-embedding-3-small
+    AI_RUN_BUDGET_ID: ${STAGING_AI_RUN_ID:?Informe UUID para preservar orçamento entre reinícios}
+    AI_RUN_BUDGET_USD: ${STAGING_AI_BUDGET_USD:-0.15}
+    # Charge every Luna input token at the cache-write ceiling, without discounts.
+    AI_RUN_PRICES_JSON: '[{"model":"gpt-4.1-nano","inputPerMillion":0.10,"outputPerMillion":0.40},{"model":"text-embedding-3-small","inputPerMillion":0.02,"outputPerMillion":0},{"model":"gpt-6-luna","inputPerMillion":0.125,"outputPerMillion":0.50}]'
+    STORAGE_DRIVER: local
+    STORAGE_LOCAL_PATH: /app/storage
+    SMTP_HOST: smtp
+    SMTP_PORT: 1025
+  volumes:
+    - staging-files:/app/storage
+    - ../test-results/staging:/app/test-results
+
+services:
+  db:
+    image: pgvector/pgvector:pg18
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: study_staging
+      POSTGRES_USER: study
+      POSTGRES_PASSWORD: study
+    volumes:
+      - staging-db:/var/lib/postgresql
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U study -d study_staging']
+      interval: 2s
+      timeout: 5s
+      retries: 20
+  smtp:
+    image: axllent/mailpit:v1.27
+    restart: unless-stopped
+  migrate:
+    <<: *runtime
+    restart: 'no'
+    working_dir: /app/apps/api
+    command: ['node', 'dist/infrastructure/db/migrate.js']
+    depends_on:
+      db:
+        condition: service_healthy
+  api:
+    <<: *runtime
+    working_dir: /app/apps/api
+    command: ['node', 'dist/main.js']
+    ports:
+      - '127.0.0.1:3201:3001'
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+      smtp:
+        condition: service_started
+  worker:
+    <<: *runtime
+    working_dir: /app/apps/api
+    command: ['node', 'dist/worker.js']
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+  web:
+    image: projeto-educacional:staging
+    build:
+      context: ..
+      dockerfile: infra/Dockerfile
+    init: true
+    restart: unless-stopped
+    environment:
+      NODE_ENV: production
+      API_INTERNAL_ORIGIN: http://api:3001
+    ports:
+      - '127.0.0.1:3200:3000'
+    depends_on:
+      - api
+      - worker
+volumes:
+  staging-db:
+  staging-files:

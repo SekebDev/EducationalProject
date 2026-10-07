@@ -63,7 +63,9 @@ export function summarizeEvidence(rows: Evidence[]) {
   const groups = new Map<string, Evidence[]>();
   for (const row of valid) {
     const key = `${row.topicId}\u0000${row.level}`;
-    groups.set(key, [...(groups.get(key) ?? []), row]);
+    const group = groups.get(key);
+    if (group) group.push(row);
+    else groups.set(key, [row]);
   }
   const topics = [...groups.values()].map((group) => {
     const first = group[0]!;
@@ -90,7 +92,9 @@ export function summarizeEvidence(rows: Evidence[]) {
   const series = new Map<string, Evidence[]>();
   for (const row of valid) {
     const key = `${row.level}\u0000${row.localDate}`;
-    series.set(key, [...(series.get(key) ?? []), row]);
+    const group = series.get(key);
+    if (group) group.push(row);
+    else series.set(key, [row]);
   }
   const seriesByLevel = [...series.values()]
     .map((group) => {

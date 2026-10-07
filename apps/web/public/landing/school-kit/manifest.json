@@ -1,0 +1,463 @@
+{
+  "version": 1,
+  "source": "Caderno — papel rasgado e objetos escolares flutuantes, Higgsfield",
+  "palette": {
+    "chalkboard": "#192327",
+    "paper": "#F1EEDF",
+    "ink": "#193F34",
+    "yellow": "#ECFA64",
+    "pink": "#EEA7C1",
+    "lilac": "#C5BCDC"
+  },
+  "images": [
+    {
+      "id": "paper-ruled-cream",
+      "label": "Papel pautado creme com furos",
+      "kind": "paper",
+      "src": "/landing/school-kit/images/paper-ruled-cream.webp",
+      "width": 700,
+      "height": 520,
+      "bytes": 73826,
+      "transparent": true,
+      "mobile": {
+        "src": "/landing/school-kit/images/paper-ruled-cream-320.webp",
+        "width": 320,
+        "height": 238,
+        "bytes": 31010
+      },
+      "original": {
+        "width": 700,
+        "height": 520,
+        "cropBox": [0, 0, 700, 520]
+      },
+      "pivot": [0.5, 0.5],
+      "safePaddingRatio": 0.12,
+      "mask": "/landing/school-kit/masks/paper-ruled-cream.svg"
+    },
+    {
+      "id": "paper-ruled-warm",
+      "label": "Papel pautado bege",
+      "kind": "paper",
+      "src": "/landing/school-kit/images/paper-ruled-warm.webp",
+      "width": 700,
+      "height": 520,
+      "bytes": 82906,
+      "transparent": true,
+      "mobile": {
+        "src": "/landing/school-kit/images/paper-ruled-warm-320.webp",
+        "width": 320,
+        "height": 238,
+        "bytes": 30502
+      },
+      "original": {
+        "width": 700,
+        "height": 520,
+        "cropBox": [0, 0, 700, 520]
+      },
+      "pivot": [0.5, 0.5],
+      "safePaddingRatio": 0.12,
+      "mask": "/landing/school-kit/masks/paper-ruled-warm.svg"
+    },
+    {
+      "id": "paper-ruled-sage",
+      "label": "Papel pautado sálvia com furos",
+      "kind": "paper",
+      "src": "/landing/school-kit/images/paper-ruled-sage.webp",
+      "width": 700,
+      "height": 520,
+      "bytes": 81794,
+      "transparent": true,
+      "mobile": {
+        "src": "/landing/school-kit/images/paper-ruled-sage-320.webp",
+        "width": 320,
+        "height": 238,
+        "bytes": 29406
+      },
+      "original": {
+        "width": 700,
+        "height": 520,
+        "cropBox": [0, 0, 700, 520]
+      },
+      "pivot": [0.5, 0.5],
+      "safePaddingRatio": 0.12,
+      "mask": "/landing/school-kit/masks/paper-ruled-sage.svg"
+    },
+    {
+      "id": "paper-yellow",
+      "label": "Papel amarelo",
+      "kind": "paper",
+      "src": "/landing/school-kit/images/paper-yellow.webp",
+      "width": 700,
+      "height": 520,
+      "bytes": 110548,
+      "transparent": true,
+      "mobile": {
+        "src": "/landing/school-kit/images/paper-yellow-320.webp",
+        "width": 320,
+        "height": 238,
+        "bytes": 33506
+      },
+      "original": {
+        "width": 700,
+        "height": 520,
+        "cropBox": [0, 0, 700, 520]
+      },
+      "pivot": [0.5, 0.5],
+      "safePaddingRatio": 0.12,
+      "mask": "/landing/school-kit/masks/paper-yellow.svg"
+    },
+    {
+      "id": "paper-pink",
+      "label": "Papel rosa",
+      "kind": "paper",
+      "src": "/landing/school-kit/images/paper-pink.webp",
+      "width": 700,
+      "height": 520,
+      "bytes": 91476,
+      "transparent": true,
+      "mobile": {
+        "src": "/landing/school-kit/images/paper-pink-320.webp",
+        "width": 320,
+        "height": 238,
+        "bytes": 30648
+      },
+      "original": {
+        "width": 700,
+        "height": 520,
+        "cropBox": [0, 0, 700, 520]
+      },
+      "pivot": [0.5, 0.5],
+      "safePaddingRatio": 0.12,
+      "mask": "/landing/school-kit/masks/paper-pink.svg"
+    },
+    {
+      "id": "paper-lilac",
+      "label": "Papel lilás",
+      "kind": "paper",
+      "src": "/landing/school-kit/images/paper-lilac.webp",
+      "width": 700,
+      "height": 520,
+      "bytes": 87470,
+      "transparent": true,
+      "mobile": {
+        "src": "/landing/school-kit/images/paper-lilac-320.webp",
+        "width": 320,
+        "height": 238,
+        "bytes": 29226
+      },
+      "original": {
+        "width": 700,
+        "height": 520,
+        "cropBox": [0, 0, 700, 520]
+      },
+      "pivot": [0.5, 0.5],
+      "safePaddingRatio": 0.12,
+      "mask": "/landing/school-kit/masks/paper-lilac.svg"
+    },
+    {
+      "id": "paper-ruled-mint",
+      "label": "Papel pautado verde com furos",
+      "kind": "paper",
+      "src": "/landing/school-kit/images/paper-ruled-mint.webp",
+      "width": 700,
+      "height": 520,
+      "bytes": 80284,
+      "transparent": true,
+      "mobile": {
+        "src": "/landing/school-kit/images/paper-ruled-mint-320.webp",
+        "width": 320,
+        "height": 238,
+        "bytes": 29834
+      },
+      "original": {
+        "width": 700,
+        "height": 520,
+        "cropBox": [0, 0, 700, 520]
+      },
+      "pivot": [0.5, 0.5],
+      "safePaddingRatio": 0.12,
+      "mask": "/landing/school-kit/masks/paper-ruled-mint.svg"
+    },
+    {
+      "id": "paper-ruled-ivory",
+      "label": "Papel pautado marfim",
+      "kind": "paper",
+      "src": "/landing/school-kit/images/paper-ruled-ivory.webp",
+      "width": 700,
+      "height": 520,
+      "bytes": 75672,
+      "transparent": true,
+      "mobile": {
+        "src": "/landing/school-kit/images/paper-ruled-ivory-320.webp",
+        "width": 320,
+        "height": 238,
+        "bytes": 29876
+      },
+      "original": {
+        "width": 700,
+        "height": 520,
+        "cropBox": [0, 0, 700, 520]
+      },
+      "pivot": [0.5, 0.5],
+      "safePaddingRatio": 0.12,
+      "mask": "/landing/school-kit/masks/paper-ruled-ivory.svg"
+    },
+    {
+      "id": "torn-strip-cream",
+      "label": "Faixa rasgada creme",
+      "kind": "paper",
+      "src": "/landing/school-kit/images/torn-strip-cream.webp",
+      "width": 1150,
+      "height": 230,
+      "bytes": 51418,
+      "transparent": true,
+      "mobile": {
+        "src": "/landing/school-kit/images/torn-strip-cream-320.webp",
+        "width": 320,
+        "height": 64,
+        "bytes": 11114
+      },
+      "original": {
+        "width": 1150,
+        "height": 230,
+        "cropBox": [0, 0, 1150, 230]
+      },
+      "pivot": [0.5, 0.5],
+      "safePaddingRatio": 0.12,
+      "mask": "/landing/school-kit/masks/torn-strip-cream.svg"
+    },
+    {
+      "id": "torn-strip-yellow",
+      "label": "Faixa rasgada amarela",
+      "kind": "paper",
+      "src": "/landing/school-kit/images/torn-strip-yellow.webp",
+      "width": 1150,
+      "height": 230,
+      "bytes": 72874,
+      "transparent": true,
+      "mobile": {
+        "src": "/landing/school-kit/images/torn-strip-yellow-320.webp",
+        "width": 320,
+        "height": 64,
+        "bytes": 11780
+      },
+      "original": {
+        "width": 1150,
+        "height": 230,
+        "cropBox": [0, 0, 1150, 230]
+      },
+      "pivot": [0.5, 0.5],
+      "safePaddingRatio": 0.12,
+      "mask": "/landing/school-kit/masks/torn-strip-yellow.svg"
+    },
+    {
+      "id": "torn-strip-sage",
+      "label": "Faixa rasgada sálvia",
+      "kind": "paper",
+      "src": "/landing/school-kit/images/torn-strip-sage.webp",
+      "width": 700,
+      "height": 130,
+      "bytes": 21770,
+      "transparent": true,
+      "mobile": {
+        "src": "/landing/school-kit/images/torn-strip-sage-320.webp",
+        "width": 320,
+        "height": 59,
+        "bytes": 11350
+      },
+      "original": {
+        "width": 700,
+        "height": 130,
+        "cropBox": [0, 0, 700, 130]
+      },
+      "pivot": [0.5, 0.5],
+      "safePaddingRatio": 0.12,
+      "mask": "/landing/school-kit/masks/torn-strip-sage.svg"
+    },
+    {
+      "id": "chalkboard",
+      "label": "Fundo de quadro escuro",
+      "kind": "background",
+      "src": "/landing/school-kit/images/chalkboard.webp",
+      "width": 1280,
+      "height": 720,
+      "bytes": 8866,
+      "transparent": false,
+      "mobile": {
+        "src": "/landing/school-kit/images/chalkboard-320.webp",
+        "width": 320,
+        "height": 180,
+        "bytes": 308
+      },
+      "original": {
+        "width": 1280,
+        "height": 720,
+        "cropBox": [0, 0, 1280, 720]
+      },
+      "pivot": [0.5, 0.5],
+      "safePaddingRatio": 0.12
+    },
+    {
+      "id": "warm-paper-background",
+      "label": "Fundo de papel claro",
+      "kind": "background",
+      "src": "/landing/school-kit/images/warm-paper-background.webp",
+      "width": 1280,
+      "height": 720,
+      "bytes": 2824,
+      "transparent": false,
+      "mobile": {
+        "src": "/landing/school-kit/images/warm-paper-background-320.webp",
+        "width": 320,
+        "height": 180,
+        "bytes": 226
+      },
+      "original": {
+        "width": 1280,
+        "height": 720,
+        "cropBox": [0, 0, 1280, 720]
+      },
+      "pivot": [0.5, 0.5],
+      "safePaddingRatio": 0.12
+    },
+    {
+      "id": "pencil",
+      "label": "Lápis 3D",
+      "kind": "sprite3d",
+      "src": "/landing/school-kit/images/pencil.webp",
+      "width": 495,
+      "height": 132,
+      "bytes": 6464,
+      "transparent": true,
+      "mobile": {
+        "src": "/landing/school-kit/images/pencil-320.webp",
+        "width": 320,
+        "height": 85,
+        "bytes": 5824
+      },
+      "original": {
+        "width": 600,
+        "height": 600,
+        "cropBox": [65, 229, 560, 361]
+      },
+      "pivot": [0.5, 0.5],
+      "safePaddingRatio": 0.12
+    },
+    {
+      "id": "eraser",
+      "label": "Borracha 3D",
+      "kind": "sprite3d",
+      "src": "/landing/school-kit/images/eraser.webp",
+      "width": 390,
+      "height": 240,
+      "bytes": 6992,
+      "transparent": true,
+      "mobile": {
+        "src": "/landing/school-kit/images/eraser-320.webp",
+        "width": 320,
+        "height": 197,
+        "bytes": 8006
+      },
+      "original": {
+        "width": 600,
+        "height": 600,
+        "cropBox": [105, 180, 495, 420]
+      },
+      "pivot": [0.5, 0.5],
+      "safePaddingRatio": 0.12
+    },
+    {
+      "id": "crumpled-paper",
+      "label": "Papel amassado 3D",
+      "kind": "sprite3d",
+      "src": "/landing/school-kit/images/crumpled-paper.webp",
+      "width": 391,
+      "height": 405,
+      "bytes": 11488,
+      "transparent": true,
+      "mobile": {
+        "src": "/landing/school-kit/images/crumpled-paper-320.webp",
+        "width": 309,
+        "height": 320,
+        "bytes": 10324
+      },
+      "original": {
+        "width": 600,
+        "height": 600,
+        "cropBox": [101, 95, 492, 500]
+      },
+      "pivot": [0.5, 0.5],
+      "safePaddingRatio": 0.12
+    },
+    {
+      "id": "paperclip",
+      "label": "Clipe 3D",
+      "kind": "sprite3d",
+      "src": "/landing/school-kit/images/paperclip.webp",
+      "width": 334,
+      "height": 166,
+      "bytes": 12206,
+      "transparent": true,
+      "mobile": {
+        "src": "/landing/school-kit/images/paperclip-320.webp",
+        "width": 320,
+        "height": 159,
+        "bytes": 13624
+      },
+      "original": {
+        "width": 600,
+        "height": 600,
+        "cropBox": [133, 217, 467, 383]
+      },
+      "pivot": [0.5, 0.5],
+      "safePaddingRatio": 0.12
+    }
+  ],
+  "models": [
+    {
+      "id": "pencil",
+      "src": "/landing/school-kit/models/pencil.glb",
+      "bytes": 43052,
+      "parts": 8,
+      "origin": [0, 0, 0],
+      "upAxis": "Y",
+      "units": "meters"
+    },
+    {
+      "id": "eraser",
+      "src": "/landing/school-kit/models/eraser.glb",
+      "bytes": 79536,
+      "parts": 5,
+      "origin": [0, 0, 0],
+      "upAxis": "Y",
+      "units": "meters"
+    },
+    {
+      "id": "crumpled-paper",
+      "src": "/landing/school-kit/models/crumpled-paper.glb",
+      "bytes": 33996,
+      "parts": 1,
+      "origin": [0, 0, 0],
+      "upAxis": "Y",
+      "units": "meters"
+    },
+    {
+      "id": "paperclip",
+      "src": "/landing/school-kit/models/paperclip.glb",
+      "bytes": 33332,
+      "parts": 1,
+      "origin": [0, 0, 0],
+      "upAxis": "Y",
+      "units": "meters"
+    }
+  ],
+  "decorations": [
+    "/landing/school-kit/decorations/loop-arrow.svg",
+    "/landing/school-kit/decorations/scribble-underline.svg",
+    "/landing/school-kit/decorations/chalk-scribbles.svg"
+  ],
+  "verified": {
+    "webpAlphaMatchesSource": true,
+    "glbBufferRanges": true
+  }
+}

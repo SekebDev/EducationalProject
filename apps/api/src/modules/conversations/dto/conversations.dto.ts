@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { educationalSkillSchema, responseDepthSchema } from '@study/contracts';
 
 export const personalitySchema = z.enum([
   'acolhedora',
@@ -7,10 +8,14 @@ export const personalitySchema = z.enum([
 ]);
 export const createSchema = z.strictObject({
   personality: personalitySchema,
+  skill: educationalSkillSchema.optional(),
+  responseDepth: responseDepthSchema.optional(),
   title: z.string().trim().min(1).max(120).optional(),
 });
 export const updateSchema = z.strictObject({
   personality: personalitySchema.optional(),
+  skill: educationalSkillSchema.optional(),
+  responseDepth: responseDepthSchema.optional(),
   title: z.string().trim().min(1).max(120).optional(),
   version: z.number().int().min(1),
 });

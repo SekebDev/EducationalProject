@@ -1881,7 +1881,7 @@ body {
 .auth-section-index {
   display: block;
   font-size: 0.75rem;
-  color: #6b7567;
+  color: #52675a;
   margin-bottom: 16px;
 }
 .studio-auth .auth-panel h2 {
@@ -1941,7 +1941,7 @@ body {
   gap: 7px;
   padding-top: 30px;
   font-size: 0.65rem;
-  color: #7a8477;
+  color: #52675a;
   margin: 0;
 }
 .pending-spinner {
@@ -2151,6 +2151,12 @@ body {
   }
 }
 @media (prefers-reduced-motion: reduce) {
+  /* Apply before hydration so reduced-motion users never see a hidden entrance. */
+  [data-slot='blur-fade'] {
+    opacity: 1 !important;
+    filter: none !important;
+    transform: none !important;
+  }
   *,
   *::before,
   *::after {
@@ -2250,5 +2256,26 @@ body {
   }
   .app-shell-chat .topbar-actions {
     gap: 4px;
+  }
+}
+
+/* Keep the navigation control available after giving its space to the chat. */
+.app-shell-sidebar-collapsed {
+  grid-template-columns: minmax(0, 1fr);
+}
+.app-shell-sidebar-collapsed > .sidebar {
+  display: none;
+}
+.desktop-sidebar-toggle {
+  flex: none;
+  color: var(--muted);
+}
+.desktop-sidebar-toggle:hover {
+  color: var(--ink);
+  background: var(--sage);
+}
+@media (max-width: 850px) {
+  .desktop-sidebar-toggle {
+    display: none;
   }
 }

@@ -1,6 +1,7 @@
 import type { NextConfig } from 'next';
 
 const nextConfig: NextConfig = {
+  experimental: { mcpServer: false },
   devIndicators: false,
   distDir: process.env.NEXT_DIST_DIR ?? '.next',
   async rewrites() {

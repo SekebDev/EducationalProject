@@ -10,6 +10,8 @@ if (!testDatabaseUrl) {
 
 export default defineConfig({
   testDir: './tests/e2e',
+  // Playwright clears only its own evidence, never paid evaluation/operation reports.
+  outputDir: './test-results/e2e',
   fullyParallel: false,
   retries: 0,
   // CI compiles routes on first visit and runs axe on shared runners.

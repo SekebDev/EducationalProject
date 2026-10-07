@@ -246,3 +246,179 @@ test('retoma o chat privado e muda o estilo por teclado em 360 px', async ({
     await other.close();
   }
 });
+
+test('persiste método e profundidade por teclado e revela flashcards sem perder Markdown', async ({
+  page,
+}) => {
+  test.setTimeout(60_000);
+  await page.setViewportSize({ width: 360, height: 780 });
+  await page.goto('/cadastro');
+  const email = `skills-${crypto.randomUUID()}@example.invalid`;
+  createdEmails.push(email);
+  await page.getByLabel('E-mail').fill(email);
+  await page.getByLabel('Senha', { exact: true }).fill('valid-password-1234');
+  await page.getByRole('button', { name: 'Criar conta' }).click();
+  await expect(page).toHaveURL(/\/conversas$/);
+  await page.goto('/conversas/nova');
+  await page.getByRole('button', { name: 'Começar conversa' }).click();
+  await expect(page).toHaveURL(/\/conversas\/[a-f0-9-]+$/);
+  const conversationId = page.url().split('/').at(-1)!;
+  const owner = (await (
+    await page.context().request.get('/api/v1/auth/me')
+  ).json()) as { id: string };
+  createdStudentIds.push(owner.id);
+  const skillMenu = page.getByRole('button', { name: /^Método de estudo:/ });
+  const depthMenu = page.getByRole('button', { name: /^Profundidade:/ });
+  const teacherMenu = page.getByRole('button', {
+    name: /^Estilo do professor:/,
+  });
+  await expect(skillMenu).toContainText('Explicar passo a passo');
+  await expect(depthMenu).toContainText('Aprofundada');
+  await skillMenu.focus();
+  await page.keyboard.press('Enter');
+  await expect(
+    page.getByText(
+      'Resolva uma etapa por vez, com pistas e feedback sobre sua tentativa.',
+    ),
+  ).toBeVisible();
+  await page.getByRole('menuitemradio', { name: /Prática guiada/ }).focus();
+  await page.keyboard.press('Enter');
+  await expect(skillMenu).toContainText('Prática guiada');
+  await expect(skillMenu).toBeEnabled();
+  await depthMenu.focus();
+  await page.keyboard.press('Enter');
+  await page.getByRole('menuitemradio', { name: /^Resumida/ }).focus();
+  await page.keyboard.press('Enter');
+  await expect(depthMenu).toContainText('Resumida');
+  await page.reload();
+  await expect(skillMenu).toContainText('Prática guiada');
+  await expect(depthMenu).toContainText('Resumida');
+  await expect(teacherMenu).toContainText('Acolhedora');
+
+  let releaseUpdate!: () => void;
+  const updateGate = new Promise<void>((resolve) => {
+    releaseUpdate = resolve;
+  });
+  await page.route(
+    `**/api/v1/conversations/${conversationId}`,
+    async (route) => {
+      if (route.request().method() === 'PATCH') {
+        await updateGate;
+      }
+      await route.continue();
+    },
+  );
+  try {
+    await skillMenu.click();
+    await page.getByRole('menuitemradio', { name: /^Flashcards/ }).click();
+    await expect(skillMenu).toBeDisabled();
+    await expect(depthMenu).toBeDisabled();
+    await expect(teacherMenu).toBeDisabled();
+  } finally {
+    releaseUpdate();
+  }
+  await expect(skillMenu).toContainText('Flashcards');
+  await expect(skillMenu).toBeEnabled();
+  await page.unroute(`**/api/v1/conversations/${conversationId}`);
+  await depthMenu.click();
+  await page.getByRole('menuitemradio', { name: /^Equilibrada/ }).click();
+  await expect(depthMenu).toContainText('Equilibrada');
+  await expect(depthMenu).toBeEnabled();
+
+  const deck = [
+    'Recupere da memória antes de revelar.',
+    '',
+    '### Cartão 1',
+    '',
+    'Frente: O que a **clorofila** absorve?',
+    '',
+    'Verso: A luz solar. Ela participa da conversão de energia.',
+    '',
+    '[Link inseguro](javascript:alert(1))',
+    '<script>window.flashcardInjected = true</script>',
+    '',
+    '### Cartão 2',
+    '',
+    'Frente: Qual gás a planta usa na fotossíntese?',
+    '',
+    'Verso: Dióxido de carbono.',
+  ].join('\n');
+  const malformed =
+    '### Cartão 3\n\nFrente: Pergunta sem verso.\n\nEste conteúdo deve continuar visível.';
+  const fenced =
+    '```text\n### Cartão 4\n\nFrente: Exemplo de formato\n\nVerso: Isto é código, não um cartão.\n```';
+  const pool = createPool(process.env.TEST_DATABASE_URL ?? '');
+  try {
+    for (const [index, answer] of [deck, malformed, fenced].entries()) {
+      const turnId = crypto.randomUUID();
+      await pool.query(
+        `INSERT INTO message(owner_id,conversation_id,sequence,role,content,state,turn_id,personality_snapshot,skill_snapshot,response_depth_snapshot)
+         VALUES ($1,$2,$3,'user','Crie cartões','completed',$4,'acolhedora','flashcards','equilibrada'),
+                ($1,$2,$5,'assistant',$6,'completed',$4,'acolhedora','flashcards','equilibrada')`,
+        [
+          owner.id,
+          conversationId,
+          index * 2 + 1,
+          turnId,
+          index * 2 + 2,
+          answer,
+        ],
+      );
+    }
+  } finally {
+    await pool.end();
+  }
+  await page.reload();
+  await expect(skillMenu).toContainText('Flashcards');
+  await expect(depthMenu).toContainText('Equilibrada');
+  const answers = page.locator('article.message.assistant');
+  const firstAnswer = answers.nth(0);
+  await expect(firstAnswer.getByText('Flashcards · Equilibrada')).toBeVisible();
+  await expect(
+    firstAnswer.getByText('clorofila', { exact: true }),
+  ).toBeVisible();
+  const firstCard = firstAnswer.getByRole('region', {
+    name: 'Cartão 1',
+    exact: true,
+  });
+  const firstBack = firstCard.getByText('A luz solar.', { exact: false });
+  await expect(firstBack).toBeHidden();
+  const reveal = firstCard.locator('summary');
+  await reveal.focus();
+  await page.keyboard.press('Enter');
+  await expect(firstBack).toBeVisible();
+  await expect(firstCard.locator('details')).toHaveAttribute('open', '');
+  await expect(firstCard.locator('script,a[href^="javascript:"]')).toHaveCount(
+    0,
+  );
+  expect(await page.evaluate(() => 'flashcardInjected' in window)).toBe(false);
+  await expect(firstAnswer.getByText('Dióxido de carbono.')).toBeHidden();
+  await page.keyboard.press('Enter');
+  await expect(firstBack).toBeHidden();
+  await expect(
+    answers.nth(1).getByText('Este conteúdo deve continuar visível.'),
+  ).toBeVisible();
+  await expect(answers.nth(1).locator('details')).toHaveCount(0);
+  await expect(answers.nth(2).locator('pre')).toContainText(
+    'Isto é código, não um cartão.',
+  );
+  await expect(answers.nth(2).locator('details')).toHaveCount(0);
+
+  await skillMenu.click();
+  await page
+    .getByRole('menuitemradio', { name: /^Explicar passo a passo/ })
+    .click();
+  await expect(skillMenu).toContainText('Explicar passo a passo');
+  await page.reload();
+  await expect(skillMenu).toContainText('Explicar passo a passo');
+  await expect(firstAnswer.getByText('Flashcards · Equilibrada')).toBeVisible();
+  await expect(firstBack).toBeHidden();
+  expect(
+    await page.evaluate(
+      () => document.documentElement.scrollWidth - innerWidth,
+    ),
+  ).toBeLessThanOrEqual(1);
+  await page.screenshot({
+    path: test.info().outputPath('chat-skills-360.png'),
+  });
+});

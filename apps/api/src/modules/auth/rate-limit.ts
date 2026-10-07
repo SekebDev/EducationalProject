@@ -10,6 +10,12 @@ export class AuthRateLimit {
 
   assertAllowed(kind: 'login' | 'reset', ip: string, account: string): void {
     const now = Date.now();
+    for (const [key, attempt] of this.attempts) {
+      if (attempt.expiresAt <= now) this.attempts.delete(key);
+    }
+    if (this.attempts.size >= 20_000) {
+      throw new PublicError(429, 'RATE_LIMITED', 'Aguarde antes de tentar novamente.', true);
+    }
     for (const [key, limit] of [
       [`${kind}:ip:${ip}`, 100],
       [`${kind}:account:${account.toLowerCase()}`, 10],
@@ -26,7 +32,7 @@ export class AuthRateLimit {
       }
       this.attempts.set(key, {
         count: count + 1,
-        expiresAt: now + 15 * 60_000,
+        expiresAt: existing && existing.expiresAt > now ? existing.expiresAt : now + 15 * 60_000,
       });
     }
   }

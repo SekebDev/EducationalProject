@@ -2,7 +2,7 @@
 
 ## Estado atual
 
-A aplicação Next.js/NestJS, worker, migrações e testes estão implementados. Os resultados locais mais recentes estão em [validation.md](validation.md); os procedimentos de implantação, backup e retenção estão em [docs/operations.md](../../docs/operations.md). O projeto ainda não tem ensaio de carga, avaliação humana ou recuperação integral do S3 aprovados. Este guia mantém os cenários de aceite para a próxima execução em staging.
+A aplicação Next.js/NestJS, worker, migrações e testes estão implementados. Resultados recentes estão em [validation.md](validation.md), operação em [docs/operations.md](../../docs/operations.md) e staging isolado em [docs/staging.md](../../docs/staging.md). A carga fake e a recuperação física/local passaram. Carga real, qualidade pedagógica, revisão humana, leitor de tela e recuperação integral do S3 têm limites e pendências registrados.
 
 ## Pré-requisitos após o bootstrap
 
@@ -32,18 +32,20 @@ pnpm typecheck
 pnpm test:unit
 pnpm test:integration
 pnpm test:contract
+pnpm test:instruments
 pnpm test:e2e
 pnpm build
 ```
 
-Esses comandos foram executados localmente em 29/09/2026; veja contagens e ressalvas em `validation.md`. O CI configura PostgreSQL, Mailpit, migrações e Edge para repetir unitários, integração, contratos e E2E com IA fake. Integração/contratos usam `TEST_DATABASE_URL` e limpam seus dados. `test:e2e` inicializa API, worker e web em 3101/3100.
+Os comandos foram executados novamente em 01/10/2026; veja contagens e ressalvas em `validation.md`. O CI configura PostgreSQL, Mailpit, migrações e Edge, com IA fake. Integração/contratos usam `TEST_DATABASE_URL` e limpam seus dados. E2E inicializa API/worker/web em 3101/3100 e grava somente em `test-results/e2e`, preservando outras evidências.
 
 ```powershell
 pnpm test:evaluations
+pnpm test:evaluations:collect --dry-run
 pnpm test:load
 ```
 
-`test:evaluations` valida o corpus e prepara um relatório sem chamar modelos. `test:load` requer k6 instalado e aceita modo fake para infraestrutura; modo real exige staging, chave e orçamento explícitos. Nenhum resultado real de qualidade ou p95 foi obtido neste ambiente. Dados de ensaio devem ser sintéticos/revisados, sem arquivos pessoais.
+`test:evaluations` e coleta `--dry-run` não chamam modelos. `test:load` usa k6 instalado ou Docker e aceita fake para infraestrutura. Rodadas reais foram executadas com staging, chave e teto explícitos, mantendo falhas no relatório; consulte a validação antes de afirmar aceite. O coletor real e o score estão documentados em `tests/evaluations/README.md`. Recuperação local e gates podem ser repetidos com `.\tests\operations\run-local.ps1 -Quality`. Dados são sintéticos, sem arquivos pessoais.
 
 ## Cenários reproduzíveis
 

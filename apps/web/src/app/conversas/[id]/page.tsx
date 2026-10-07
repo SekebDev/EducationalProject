@@ -17,6 +17,8 @@ import type {
   Message,
   Page,
   Personality,
+  EducationalSkill,
+  ResponseDepth,
 } from '@study/contracts';
 import { StudyShell } from '../../../features/study/StudyShell';
 import {
@@ -32,7 +34,6 @@ import {
   Copy,
   FileText,
   GraduationCap,
-  Paperclip,
   Trash2,
   Sparkles,
   Upload,
@@ -45,8 +46,19 @@ import {
 } from '@/components/ui/sheet';
 import { TeacherMenu } from '@/features/chat/TeacherMenu';
 import { RichMessage } from '@/features/chat/RichMessage';
+import { skillNames, depthNames } from '@/features/chat/StudySkillControls';
+import skillStyles from '@/features/chat/study-skills.module.css';
 import { api, errorMessage, RequestError } from '../../../lib/api';
 import styles from '../conversation-flow.module.css';
+import { PdfWorkspace } from '@/features/pdf-study/PdfWorkspace';
+import { useConversationPdf } from '@/features/chat/use-conversation-pdf';
+import { ConversationComposer } from '@/features/chat/ConversationComposer';
+import { PaneResizeHandle } from '@/features/chat/PaneResizeHandle';
+import { useConversationPaneSizes } from '@/features/chat/use-conversation-pane-sizes';
+import {
+  PdfConversationStatus,
+  ReopenMessagePdf,
+} from '@/features/chat/ConversationPdfContext';
 
 const personalityNames: Record<Personality, string> = {
   acolhedora: 'Acolhedora',
@@ -109,13 +121,16 @@ export default function ConversationPage() {
   const [atBottom, setAtBottom] = useState(true);
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const [draggingFiles, setDraggingFiles] = useState(false);
+  const [pdfQuestion, setPdfQuestion] = useState('');
   const dragDepth = useRef(0);
+  const paneSizes = useConversationPaneSizes();
   const activeMessage = messages.find(
     (message) =>
       message.role === 'assistant' &&
       ['queued', 'generating'].includes(message.state),
   );
   const active = Boolean(activeMessage);
+  const preferencesDisabled = updating || active || sending;
 
   useEffect(() => {
     const media = window.matchMedia('(max-width: 1199px)');
@@ -181,6 +196,30 @@ export default function ConversationPage() {
     conversationVersion: conversation?.version ?? 0,
     onChanged: refresh,
   });
+  const pdf = useConversationPdf({
+    conversationId: id,
+    materials: materialController.materials,
+    loading:
+      materialController.loading ||
+      materialController.loadedConversationId !== id,
+    onError: setError,
+  });
+
+  function openPdf(materialId: string, pageId?: string) {
+    if (sending || active) {
+      setError('Aguarde a resposta atual terminar antes de abrir outro PDF.');
+      return;
+    }
+    pdf.open(materialId, pageId);
+    setFilesOpen(false);
+    questionInput.current?.focus();
+  }
+
+  const preparePdfQuestion = useCallback((question: string) => {
+    setContent(question);
+    questionInput.current?.focus();
+    questionInput.current?.scrollIntoView({ block: 'nearest' });
+  }, []);
 
   useEffect(() => {
     function resetDrag() {
@@ -299,12 +338,29 @@ export default function ConversationPage() {
 
   async function send(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    if (!conversation || !content.trim()) {
+    if (!conversation || !content.trim() || sending || active || updating) {
       return;
     }
     setSending(true);
     setError('');
     try {
+      if (pdf.materialId) {
+        if (!pdf.bridge?.ready || pdf.bridge.blocked) {
+          throw new Error(
+            'Aguarde o PDF ficar pronto antes de enviar a pergunta.',
+          );
+        }
+        setPdfQuestion(content.trim());
+        const confirmed = await pdf.bridge.submit(content.trim());
+        if (!confirmed) {
+          throw new Error(
+            'A explicação não foi confirmada. Sua pergunta continua no campo de mensagem; consulte o aviso no PDF para recuperar o resultado.',
+          );
+        }
+        followMessages.current = true;
+        setContent('');
+        return;
+      }
       await api(`/conversations/${id}/messages`, {
         method: 'POST',
         idempotent: true,
@@ -322,12 +378,17 @@ export default function ConversationPage() {
         await refresh().catch(() => undefined);
       }
     } finally {
+      setPdfQuestion('');
       setSending(false);
     }
   }
 
-  async function changePersonality(personality: Personality) {
-    if (!conversation) {
+  async function changePreferences(preferences: {
+    personality?: Personality;
+    skill?: EducationalSkill;
+    responseDepth?: ResponseDepth;
+  }) {
+    if (!conversation || updating || active || sending) {
       return;
     }
     setUpdating(true);
@@ -335,7 +396,7 @@ export default function ConversationPage() {
     try {
       const updated = await api<Conversation>(`/conversations/${id}`, {
         method: 'PATCH',
-        body: { personality, version: conversation.version },
+        body: { ...preferences, version: conversation.version },
       });
       setConversation(updated);
     } catch (cause) {
@@ -413,7 +474,7 @@ export default function ConversationPage() {
   }
 
   const materials = conversation ? (
-    <MaterialsPanel controller={materialController} />
+    <MaterialsPanel controller={materialController} onOpenPdf={openPdf} />
   ) : null;
 
   function renderConversation() {
@@ -422,7 +483,10 @@ export default function ConversationPage() {
     }
     return (
       <main
-        className={`${styles.chatLayout} ${!compact && filesOpen ? styles.withFiles : ''}`}
+        ref={paneSizes.containerRef}
+        style={paneSizes.style}
+        data-resizing={paneSizes.dragging || undefined}
+        className={`${styles.chatLayout} ${!compact && filesOpen && !pdf.materialId ? styles.withFiles : ''} ${pdf.materialId ? styles.withPdf : ''}`}
         aria-label="Conversa"
         onDragEnter={enterFiles}
         onDragLeave={leaveFiles}
@@ -441,7 +505,7 @@ export default function ConversationPage() {
             <span>PDF, DOCX, TXT ou Markdown · Até 20 MB por arquivo</span>
           </div>
         )}
-        <div className={styles.chatMain}>
+        <div className={styles.chatMain} id="conversation-chat-panel">
           <h2 className="sr-only">{conversation.title}</h2>
           <div
             ref={messageScroll}
@@ -516,8 +580,18 @@ export default function ConversationPage() {
                           {message.content}
                         </div>
                       ) : (
-                        <RichMessage content={message.content} />
+                        <>
+                          <span className={skillStyles.messageMetadata}>
+                            {skillNames[message.skill]} ·{' '}
+                            {depthNames[message.responseDepth]}
+                          </span>
+                          <RichMessage
+                            content={message.content}
+                            skill={message.skill}
+                          />
+                        </>
                       ))}
+                    <ReopenMessagePdf message={message} onOpen={openPdf} />
                     {message.references.length > 0 && (
                       <div className={styles.chatReferences}>
                         <strong>Fontes consultadas</strong>
@@ -653,6 +727,7 @@ export default function ConversationPage() {
                   </motion.article>
                 ))
               )}
+              <PdfConversationStatus pdf={pdf} question={pdfQuestion} />
             </div>
           </div>
           {!atBottom && (
@@ -666,91 +741,70 @@ export default function ConversationPage() {
               <ArrowDown size={18} aria-hidden="true" />
             </Button>
           )}
-          <div className={styles.chatComposerWrap}>
-            <form
-              className={styles.chatComposer}
-              onSubmit={(event) => void send(event)}
-            >
-              <label htmlFor="question" className="sr-only">
-                Sua pergunta
-              </label>
-              <textarea
-                ref={questionInput}
-                id="question"
-                placeholder="Pergunte ao professor"
-                value={content}
-                maxLength={12000}
-                disabled={sending}
-                onChange={(event) => setContent(event.target.value)}
-                onKeyDown={(event) => {
-                  if (
-                    event.key === 'Enter' &&
-                    !event.shiftKey &&
-                    !event.nativeEvent.isComposing &&
-                    !compact
-                  ) {
-                    event.preventDefault();
-                    if (!sending && !active && content.trim()) {
-                      event.currentTarget.form?.requestSubmit();
-                    }
-                  }
-                }}
-                required
-                rows={1}
-              />
-              <div className={styles.chatComposerFooter}>
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="icon"
-                  aria-label="Anexar arquivos"
-                  onClick={(event) => {
-                    filesOpener.current = event.currentTarget;
-                    setFilesOpen(true);
-                  }}
-                >
-                  <Paperclip size={20} aria-hidden="true" />
-                </Button>
-                <span className={styles.composerHint}>
-                  {active
-                    ? 'O professor está respondendo…'
-                    : content.length > 10000
-                      ? `${content.length.toLocaleString('pt-BR')} / 12.000`
-                      : compact
-                        ? ''
-                        : 'Enter envia · Shift + Enter quebra a linha'}
-                </span>
-                <Button
-                  className={styles.chatSend}
-                  type="submit"
-                  size="icon"
-                  aria-label={sending ? 'Enviando pergunta' : 'Enviar pergunta'}
-                  disabled={sending || active || !content.trim()}
-                >
-                  <ArrowUp size={21} aria-hidden="true" />
-                </Button>
-              </div>
-            </form>
-            {error && (
-              <p className={`form-error ${styles.chatError}`} role="alert">
-                {error}
-              </p>
-            )}
-            <p className={styles.aiNote}>
-              O professor usa IA. Confira as respostas e as fontes.
-            </p>
-            <span className="sr-only" role="status">
-              {copiedId ? 'Resposta copiada.' : ''}
-              {updating ? 'Atualizando o professor…' : ''}
-            </span>
-          </div>
+          <ConversationComposer
+            conversation={conversation}
+            content={content}
+            setContent={setContent}
+            input={questionInput}
+            compact={compact}
+            sending={sending}
+            active={active}
+            updating={updating}
+            error={error}
+            copied={Boolean(copiedId)}
+            pdf={pdf}
+            onSend={send}
+            onPreferences={(preferences) => void changePreferences(preferences)}
+            onOpenFiles={(opener) => {
+              filesOpener.current = opener;
+              setFilesOpen(true);
+            }}
+          />
         </div>
-        {!compact && filesOpen && (
-          <aside className={styles.filesRail} aria-label="Arquivos da conversa">
-            {materials}
-          </aside>
+        {pdf.materialId && (
+          <>
+            <PaneResizeHandle
+              {...paneSizes.pdf}
+              kind="pdf"
+              label="Ajustar largura da conversa e do PDF"
+              controls="conversation-chat-panel conversation-pdf-panel"
+              valueText={`Conversa: ${Math.round(paneSizes.pdf.value)}% do espaço`}
+            />
+            <section
+              id="conversation-pdf-panel"
+              className={styles.pdfPane}
+              aria-label="PDF aberto na conversa"
+            >
+              <PdfWorkspace
+                key={pdf.materialId}
+                materialId={pdf.materialId}
+                onClose={() => void pdf.close()}
+                onBridge={pdf.receiveBridge}
+                onCompleted={refresh}
+                onRequestQuestion={preparePdfQuestion}
+              />
+            </section>
+          </>
         )}
-        {compact && (
+        {!compact && filesOpen && !pdf.materialId && (
+          <>
+            <PaneResizeHandle
+              {...paneSizes.materials}
+              kind="materials"
+              label="Ajustar largura dos materiais"
+              controls="conversation-chat-panel conversation-materials-panel"
+              valueText={`Materiais: ${Math.round(paneSizes.materials.value)} pixels`}
+            />
+            <aside
+              id="conversation-materials-panel"
+              className={styles.filesRail}
+              aria-label="Arquivos da conversa"
+            >
+              {materials}
+            </aside>
+          </>
+        )}
+        {(compact || Boolean(pdf.materialId)) && (
           <Sheet open={filesOpen} onOpenChange={setFilesOpen}>
             <SheetContent
               side="right"
@@ -781,8 +835,8 @@ export default function ConversationPage() {
         conversation ? (
           <TeacherMenu
             value={conversation.personality}
-            disabled={updating || active || sending}
-            onChange={(value) => void changePersonality(value)}
+            disabled={preferencesDisabled}
+            onChange={(value) => void changePreferences({ personality: value })}
           />
         ) : undefined
       }

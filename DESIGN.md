@@ -20,6 +20,10 @@ Os campos têm rótulos persistentes, os botões descrevem ações e o foco perm
 
 O chat segue a estrutura solicitada do ChatGPT: coluna de mensagens central, perguntas em balões à direita, respostas do professor sobre a superfície de leitura e caixa de escrita sempre disponível na parte inferior. O menu de personalidade ocupa a posição do seletor de modelos, no canto superior esquerdo da área principal. Arquivos enviados ficam no painel à direita; no celular, abrem em um painel próprio. A marca e os nomes continuam sendo os do Caderno.
 
+O menu lateral pode ser recolhido pelo botão do cabeçalho, que continua disponível para reabri-lo. No desktop, divisórias ajustáveis permitem distribuir o espaço entre conversa e PDF ou materiais. Arrastar muda a largura; as setas do teclado também ajustam a divisória e duplo clique restaura a medida inicial. As preferências ficam salvas no navegador. Em telas estreitas, o menu continua em uma gaveta e os painéis se organizam para rolagem vertical.
+
+No PDF, o mascote acompanha a linha explicada e apresenta uma explicação curta ao lado dela. O botão “Entendi” fica abaixo do mascote e controla o avanço: movimento reduzido e mudanças de zoom não pulam a etapa. Pedidos de outra explicação ou desenho continuam no campo do chat. Desenhos didáticos são diagramas visuais com rótulos e conexões; páginas de estudo não recebem cópias da resposta em prosa.
+
 A evolução organiza resultados reais em um resumo, gráfico por data e nível, temas e próximas práticas. Filtros compactos e evidências expansíveis deixam a leitura principal mais clara. Não apresentar estimativas ou progresso inventado como resultados do estudante.
 
 ## Movimento

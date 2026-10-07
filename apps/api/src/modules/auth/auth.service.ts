@@ -74,7 +74,17 @@ export class AuthService {
       );
     }
     const token = randomBytes(32).toString('base64url');
-    await this.insertSession(this.pool, row.id, token, csrfToken);
+    await transaction(this.pool, async (client) => {
+      // Serialize session creation with password changes, without holding a lock during Argon2.
+      const current = await client.query<{ password_hash: string }>(
+        'SELECT password_hash FROM student WHERE id=$1 FOR UPDATE',
+        [row.id],
+      );
+      if (current.rows[0]?.password_hash !== row.password_hash) {
+        throw new PublicError(401, 'INVALID_CREDENTIALS', 'E-mail ou senha inválidos.');
+      }
+      await this.insertSession(client, row.id, token, csrfToken);
+    });
     return {
       student: { id: row.id, email: row.email, timezone: row.timezone },
       token,
@@ -120,10 +130,14 @@ export class AuthService {
       return;
     }
     const token = randomBytes(32).toString('base64url');
-    await this.pool.query(
-      "INSERT INTO password_reset(student_id,token_hash,expires_at) VALUES ($1,$2,now()+interval '15 minutes')",
-      [id, hashToken(token)],
-    );
+    await transaction(this.pool, async (client) => {
+      await client.query('SELECT id FROM student WHERE id=$1 FOR UPDATE', [id]);
+      await client.query('UPDATE password_reset SET used_at=now() WHERE student_id=$1 AND used_at IS NULL', [id]);
+      await client.query(
+        "INSERT INTO password_reset(student_id,token_hash,expires_at) VALUES ($1,$2,now()+interval '15 minutes')",
+        [id, hashToken(token)],
+      );
+    });
     const transporter = nodemailer.createTransport({
       host: this.config.smtpHost,
       port: this.config.smtpPort,
@@ -144,6 +158,14 @@ export class AuthService {
       type: argon2.argon2id,
     });
     await transaction(this.pool, async (client) => {
+      const owner = await client.query<{ student_id: string }>(
+        'SELECT student_id FROM password_reset WHERE token_hash=$1', [hashToken(token)],
+      );
+      if (!owner.rows[0]) {
+        throw new PublicError(422, 'RESET_INVALID', 'Link inválido ou expirado.');
+      }
+      // Use the same lock order for issuing links, consuming links and creating sessions.
+      await client.query('SELECT id FROM student WHERE id=$1 FOR UPDATE', [owner.rows[0].student_id]);
       const result = await client.query<{ id: string; student_id: string }>(
         'SELECT id,student_id FROM password_reset WHERE token_hash=$1 AND used_at IS NULL AND expires_at>now() FOR UPDATE',
         [hashToken(token)],
@@ -161,8 +183,8 @@ export class AuthService {
         row.student_id,
       ]);
       await client.query(
-        'UPDATE password_reset SET used_at=now() WHERE id=$1',
-        [row.id],
+        'UPDATE password_reset SET used_at=now() WHERE student_id=$1 AND used_at IS NULL',
+        [row.student_id],
       );
       await client.query(
         'UPDATE session SET revoked_at=now() WHERE student_id=$1 AND revoked_at IS NULL',

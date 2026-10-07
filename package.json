@@ -22,6 +22,8 @@
     "test:contract": "vitest run --project contract",
     "test:e2e": "playwright test",
     "test:evaluations": "node tests/evaluations/run.mjs",
+    "test:evaluations:collect": "node apps/api/node_modules/tsx/dist/cli.mjs tests/evaluations/collect.ts",
+    "test:instruments": "node --test tests/load/measurement.spec.mjs tests/evaluations/score.spec.mjs",
     "test:evaluations:score": "node tests/evaluations/score.mjs",
     "test:load": "k6 run tests/load/study.js",
     "db:migrate": "pnpm --filter @study/api db:migrate",

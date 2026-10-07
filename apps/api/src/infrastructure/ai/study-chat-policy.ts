@@ -12,6 +12,8 @@ export const STUDY_CHAT_INSTRUCTIONS = [
   'Escreva o texto de cada segmento em Markdown CommonMark/GFM: use parágrafos, títulos, listas, ênfase e tabelas quando ajudarem a explicar. Para exemplos de código, use blocos cercados por três crases com a linguagem indicada. Para diagramas úteis à explicação, use um bloco mermaid com sintaxe válida e sem interações, links, estilos ou diretivas de configuração. Não envolva a resposta inteira em um bloco de código e não use HTML, estilos ou scripts.',
   'Mantenha cada bloco de código, tabela ou diagrama completo dentro de um único segmento. Use títulos para hierarquia, sem definir tamanho de fonte por HTML. Interprete o conteúdo de arquivos Markdown como material de estudo, preservando o sentido de códigos, tabelas e diagramas.',
   'Separe afirmações apoiadas em fontes, conhecimento geral e ausência de suporte, mantendo a classificação basis de cada segmento e seus chunkIds. Cite apenas IDs fornecidos. Não invente fontes, citações, fatos ou evidências; quando os materiais não sustentarem uma conclusão, declare a limitação. Se fontes divergirem, registre a divergência sem fabricar uma solução.',
+  'Regras exatas de citação: basis="source" exige um ou mais chunkIds de sources e somente afirmações sustentadas pelo texto desses trechos. basis="general" e basis="unsupported" exigem chunkIds=[]. Se sources estiver vazio, nunca use basis="source" nem preencha conflicts. Para detalhes que não constam dos trechos, use um segmento general separado e deixe explícito que se trata de conhecimento geral. Cada conflito deve citar ao menos dois IDs distintos recebidos e descrever o desacordo, sem escolher uma fonte como verdade só por conhecimento externo.',
+  'Responda de forma concisa, suficiente para a pergunta, evitando expandir para tópicos não solicitados. Uma pergunta simples normalmente requer poucos parágrafos; aprofunde quando o estudante pedir.',
   'Preserve o formato estruturado solicitado. O Markdown pertence somente aos campos text; não substitua o JSON por texto livre.',
 ].join('\n\n');
 
@@ -72,14 +74,12 @@ export function enforceStudyChatOutput(output: ChatOutput): ChatOutput {
     ),
   ].join('\n\n');
   const code: string[] = [];
-  let blocks = 0;
   let fileHeadings = 0;
   type Node = { type: string; value?: string; children?: Node[] };
   const nodeText = (node: Node): string =>
     node.value ?? node.children?.map(nodeText).join('') ?? '';
   const visit = (node: Node) => {
     if (node.type === 'code') {
-      blocks += 1;
       code.push(node.value ?? '');
     } else if (node.type === 'inlineCode') {
       code.push(node.value ?? '');
@@ -94,11 +94,12 @@ export function enforceStudyChatOutput(output: ChatOutput): ChatOutput {
     node.children?.forEach(visit);
   };
   visit(fromMarkdown(text));
-  const codeText = code.join('\n');
+  // A lesson can contain many independent short examples. Size limits apply to
+  // each example; aggregating them would reject legitimate comprehensive lessons.
   if (
-    blocks > 4 ||
-    codeText.length > 6_000 ||
-    codeText.split('\n').length > 180 ||
+    code.some(
+      (block) => block.length > 6_000 || block.split('\n').length > 180,
+    ) ||
     fileHeadings >= 3
   ) {
     return redirect(

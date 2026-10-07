@@ -28,13 +28,13 @@ describe.skipIf(!databaseUrl)('auth HTTP contract', () => {
     process.env.SMTP_PORT = '1025';
     process.env.SMTP_FROM = 'estudos@example.invalid';
     const app = await NestFactory.create(AppModule, { logger: false });
-    app.use(csrfProtection('http://localhost:3000'));
+    app.use(csrfProtection('http://localhost:3000', ['http://127.0.0.1:3000']));
     app.useGlobalFilters(new PublicErrorFilter());
     await app.listen(0, '127.0.0.1');
     const base = `${await app.getUrl()}/api/v1/auth`;
     const ids: string[] = [];
     try {
-      async function createStudent() {
+      async function createStudent(origin = 'http://localhost:3000') {
         const csrfResponse = await fetch(`${base}/csrf`);
         const { token } = (await csrfResponse.json()) as { token: string };
         const csrfCookie = csrfResponse.headers
@@ -49,7 +49,7 @@ describe.skipIf(!databaseUrl)('auth HTTP contract', () => {
           method: 'POST',
           headers: {
             'content-type': 'application/json',
-            origin: 'http://localhost:3000',
+            origin,
             cookie: csrfCookie,
           },
           body,
@@ -59,7 +59,7 @@ describe.skipIf(!databaseUrl)('auth HTTP contract', () => {
           method: 'POST',
           headers: {
             'content-type': 'application/json',
-            origin: 'http://localhost:3000',
+            origin,
             'x-csrf-token': token,
             cookie: csrfCookie,
           },
@@ -83,7 +83,7 @@ describe.skipIf(!databaseUrl)('auth HTTP contract', () => {
       }
 
       const first = await createStudent();
-      const second = await createStudent();
+      const second = await createStudent('http://127.0.0.1:3000');
       const firstMe = await fetch(`${base}/me`, {
         headers: { cookie: first.cookie },
       });

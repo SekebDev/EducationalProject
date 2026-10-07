@@ -23,6 +23,7 @@ import { Badge } from '@/components/ui/badge';
 import { BlurFade } from '@/components/ui/blur-fade';
 import type { Student } from '@study/contracts';
 import { api, errorMessage } from '../../lib/api';
+import { safeReturnTo } from '../../lib/safe-return-to';
 
 type AuthMode = 'login' | 'register' | 'reset';
 const authIntroduction = {
@@ -69,10 +70,7 @@ export function AuthForm({ mode }: { mode: AuthMode }) {
     const params = new URLSearchParams(window.location.search);
     setResetToken(params.get('token') ?? '');
     setSessionExpired(params.get('expired') === '1');
-    const requested = params.get('returnTo');
-    if (requested?.startsWith('/') && !requested.startsWith('//')) {
-      setReturnTo(requested);
-    }
+    setReturnTo(safeReturnTo(params.get('returnTo'), window.location.origin));
   }, []);
 
   async function submit(event: FormEvent<HTMLFormElement>) {

@@ -4,6 +4,22 @@ import { createPool } from '../../apps/api/src/infrastructure/db/pool';
 
 const emails: string[] = [];
 
+async function expectKeyboardFocus(page: import('@playwright/test').Page) {
+  let visible = false;
+  for (let index = 0; index < 12 && !visible; index++) {
+    await page.keyboard.press('Tab');
+    visible = await page.evaluate(() => {
+      const element = document.activeElement;
+      return (
+        element !== document.body &&
+        Boolean(element?.matches(':focus-visible')) &&
+        getComputedStyle(element!).outlineStyle !== 'none'
+      );
+    });
+  }
+  expect(visible).toBe(true);
+}
+
 test.afterEach(async () => {
   const databaseUrl = process.env.TEST_DATABASE_URL;
   if (!databaseUrl) {
@@ -51,6 +67,7 @@ test.afterEach(async () => {
 test('prova, rascunho, correção parcial e entrega com brancas', async ({
   page,
 }) => {
+  test.setTimeout(120_000);
   await page.emulateMedia({ reducedMotion: 'reduce' });
   await page.goto('/cadastro');
   const email = `exam-${crypto.randomUUID()}@example.invalid`;
@@ -71,7 +88,7 @@ test('prova, rascunho, correção parcial e entrega com brancas', async ({
   await expect(page).toHaveURL(/\/provas\/[a-f0-9-]+$/);
   await page.getByRole('link', { name: 'Responder prova' }).click();
   await expect(page).toHaveURL(/\/tentativas\/[a-f0-9-]+$/);
-  for (const width of [360, 1440]) {
+  for (const width of [360, 768, 1024, 1440]) {
     await page.setViewportSize({ width, height: 900 });
     expect(
       await page.evaluate(
@@ -84,6 +101,7 @@ test('prova, rascunho, correção parcial e entrega com brancas', async ({
         .violations,
       `Axe na tentativa a ${width}px`,
     ).toEqual([]);
+    await expectKeyboardFocus(page);
     await page.screenshot({
       path: test.info().outputPath(`tentativa-${width}.png`),
       fullPage: true,
@@ -91,7 +109,11 @@ test('prova, rascunho, correção parcial e entrega com brancas', async ({
   }
   const attemptUrl = page.url();
   const question = page.locator('.question-preview').first();
-  await question.getByRole('radio', { name: /A\. Alternativa/ }).check();
+  const option = question.getByRole('radio', { name: /A\. Alternativa/ });
+  await option.focus();
+  await page.keyboard.press('Space');
+  await expect(option).toBeChecked();
+  await expect(question.getByText('Alternativa correta: A')).toHaveCount(0);
   await expect(
     question.getByText('Rascunho salvo automaticamente'),
   ).toBeVisible();
@@ -106,7 +128,7 @@ test('prova, rascunho, correção parcial e entrega com brancas', async ({
     .locator('.question-preview')
     .first()
     .getByRole('button', { name: 'Confirmar resposta' })
-    .click();
+    .press('Enter');
   await expect(
     page
       .locator('.question-preview')
@@ -117,9 +139,11 @@ test('prova, rascunho, correção parcial e entrega com brancas', async ({
   await essay
     .getByRole('textbox', { name: 'Sua resposta' })
     .fill('Resposta parcial');
-  await essay.getByRole('button', { name: 'Confirmar resposta' }).click();
+  await essay
+    .getByRole('button', { name: 'Confirmar resposta' })
+    .press('Enter');
   await expect(essay.getByText(/Resposta confirmada|Nota:/)).toBeVisible();
-  await page.getByRole('button', { name: 'Entregar tentativa' }).click();
+  await page.getByRole('button', { name: 'Entregar tentativa' }).press('Enter');
   await expect(
     page.getByRole('button', {
       name: 'Confirmar entrega com respostas em branco',
@@ -133,7 +157,7 @@ test('prova, rascunho, correção parcial e entrega com brancas', async ({
   await expect(page).toHaveURL(/\/resultado$/);
   await expect(page.getByText('Em branco')).toBeVisible();
   await expect(page.getByText('Contestadas')).toBeVisible();
-  for (const width of [360, 1440]) {
+  for (const width of [360, 768, 1024, 1440]) {
     await page.setViewportSize({ width, height: 900 });
     expect(
       await page.evaluate(
@@ -146,6 +170,7 @@ test('prova, rascunho, correção parcial e entrega com brancas', async ({
         .violations,
       `Axe no resultado a ${width}px`,
     ).toEqual([]);
+    await expectKeyboardFocus(page);
     await page.screenshot({
       path: test.info().outputPath(`resultado-${width}.png`),
       fullPage: true,

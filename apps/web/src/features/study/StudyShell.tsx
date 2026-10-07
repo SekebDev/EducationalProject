@@ -11,6 +11,8 @@ import {
   LogOut,
   Menu,
   MessageCircle,
+  PanelLeftClose,
+  PanelLeftOpen,
   Plus,
   Sparkles,
   TrendingUp,
@@ -29,6 +31,7 @@ import {
   SheetTrigger,
 } from '@/components/ui/sheet';
 import { api, errorMessage, RequestError } from '../../lib/api';
+import { useSidebarPreference } from './use-sidebar-preference';
 
 const areas = [
   { href: '/conversas', label: 'Conversas', icon: MessageCircle },
@@ -57,6 +60,7 @@ export function StudyShell({
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [open, setOpen] = useState(false);
+  const sidebar = useSidebarPreference();
 
   useEffect(() => {
     let active = true;
@@ -241,13 +245,43 @@ export function StudyShell({
   }
 
   return (
-    <div className={`app-shell${variant === 'chat' ? ' app-shell-chat' : ''}`}>
-      <aside className="sidebar" aria-label="Navegação principal">
+    <div
+      className={`app-shell${variant === 'chat' ? ' app-shell-chat' : ''}${sidebar.collapsed ? ' app-shell-sidebar-collapsed' : ''}`}
+    >
+      <aside
+        id="study-sidebar"
+        className="sidebar"
+        aria-label="Navegação principal"
+      >
         {navigation()}
       </aside>
       <div className="main-column">
         <header className="topbar">
           <div className="topbar-context">
+            <Button
+              variant="ghost"
+              size="icon"
+              className="desktop-sidebar-toggle"
+              onClick={sidebar.toggle}
+              aria-label={
+                sidebar.collapsed
+                  ? 'Abrir menu lateral'
+                  : 'Recolher menu lateral'
+              }
+              title={
+                sidebar.collapsed
+                  ? 'Abrir menu lateral'
+                  : 'Recolher menu lateral'
+              }
+              aria-expanded={!sidebar.collapsed}
+              aria-controls="study-sidebar"
+            >
+              {sidebar.collapsed ? (
+                <PanelLeftOpen size={20} aria-hidden="true" />
+              ) : (
+                <PanelLeftClose size={20} aria-hidden="true" />
+              )}
+            </Button>
             <Sheet open={open} onOpenChange={setOpen}>
               <SheetTrigger asChild>
                 <Button

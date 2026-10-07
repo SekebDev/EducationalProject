@@ -63,6 +63,8 @@ for (const width of [360, 1440]) {
   }) => {
     await page.setViewportSize({ width, height: 860 });
     const conversationUrl = await createConversation(page);
+    const secondFileName =
+      'anotacoes-de-biologia-respiracao-celular-e-obtencao-de-energia.markdown';
     const uploads: string[] = [];
     page.on('request', (request) => {
       if (
@@ -89,7 +91,7 @@ for (const width of [360, 1440]) {
         text: '# Fotossíntese\nA planta usa luz para produzir matéria orgânica.',
       },
       {
-        name: 'respiracao.markdown',
+        name: secondFileName,
         type: 'text/plain',
         text: '# Respiração\nAs células obtêm energia a partir de nutrientes.',
       },
@@ -105,13 +107,13 @@ for (const width of [360, 1440]) {
       panel.getByRole('checkbox', { name: 'fotossintese.md' }),
     ).toBeEnabled();
     await expect(
-      panel.getByRole('checkbox', { name: 'respiracao.markdown' }),
+      panel.getByRole('checkbox', { name: secondFileName }),
     ).toBeEnabled();
     await expect(
       panel.getByRole('checkbox', { name: 'fotossintese.md' }),
     ).not.toBeChecked();
     await expect(
-      panel.getByRole('checkbox', { name: 'respiracao.markdown' }),
+      panel.getByRole('checkbox', { name: secondFileName }),
     ).not.toBeChecked();
     await expect(panel.getByText('Pronto', { exact: true })).toHaveCount(2);
     expect(uploads).toHaveLength(2);
@@ -126,10 +128,43 @@ for (const width of [360, 1440]) {
       panel.getByRole('checkbox', { name: 'fotossintese.md' }),
     ).toHaveCount(1);
     await expect(
-      panel.getByRole('checkbox', { name: 'respiracao.markdown' }),
+      panel.getByRole('checkbox', { name: secondFileName }),
     ).toHaveCount(1);
     expect(uploads).toHaveLength(2);
     await expect(page).toHaveURL(conversationUrl);
+    await expect(
+      panel.getByText('Nenhum selecionado', { exact: true }),
+    ).toBeVisible();
+    const firstSource = panel.getByRole('checkbox', {
+      name: 'fotossintese.md',
+    });
+    const secondSource = panel.getByRole('checkbox', { name: secondFileName });
+    await firstSource.focus();
+    await expect(firstSource).toBeFocused();
+    await firstSource.press('Space');
+    await expect(firstSource).toBeChecked();
+    await expect(
+      panel.getByText('1 selecionado', { exact: true }),
+    ).toBeVisible();
+    await expect(secondSource).toBeEnabled();
+    await secondSource.focus();
+    await expect(secondSource).toBeFocused();
+    await secondSource.press('Space');
+    await expect(secondSource).toBeChecked();
+    await expect(
+      panel.getByText('2 selecionados', { exact: true }),
+    ).toBeVisible();
+    await expect(panel.getByText('Pronto', { exact: true })).toHaveCount(2);
+    await expect(secondSource).toBeEnabled();
+    await secondSource.focus();
+    await expect(secondSource).toBeFocused();
+    await page.screenshot({
+      path: test.info().outputPath(`chat-arquivos-selecionados-${width}.png`),
+    });
+    const overflow = await page.evaluate(
+      () => document.documentElement.scrollWidth - innerWidth,
+    );
+    expect(overflow).toBeLessThanOrEqual(1);
   });
 }
 
