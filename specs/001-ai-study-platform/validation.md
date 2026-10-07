@@ -121,3 +121,13 @@ O CI do commit bd31528 parou em formatação (24 arquivos). Após corrigir forma
 | Integração/contratos/E2E/build locais | Não repetidos nesta sessão: Docker Desktop não está em execução e não há banco de teste local disponível |
 
 As primeiras tentativas no sandbox falharam por EPERM na resolução de dependências; a execução fora dessas restrições permitiu validar tipos e unidades. Evidência histórica de staging e testes de 01/10 permanece identificada por data e não é apresentada como rodada atual. O workflow remoto usa Node/pnpm fixados, migrações e PostgreSQL isolado para validar o conjunto antes do merge em dev.
+
+### Resultado remoto no commit d1c502b
+
+[Workflow 37616075392](https://github.com/SekebDev/EducationalProject/actions/runs/37616075392), Node 24/pnpm 10 e PostgreSQL isolado:
+
+- Migrações, Prettier, ESLint, tipos, unitários, integração, contratos, instrumentos e coletor `--dry-run`: aprovados. Contratos: três testes; instrumentos: seis testes.
+- A primeira execução de integração teve quatro falhas na limpeza das fixtures PDF: a integração ao chat passou a criar mensagens e a retenção do tutor conservava tentativas após excluir material. A fixture foi corrigida para remover somente mensagens da conversa sintética e tentativas do proprietário sintético. A rodada seguinte aprovou integração sem alterar asserções.
+- E2E: 12 passaram e dois falharam, sem retries. Recuperação de senha: confirmação após solicitar instruções não apareceu em 15 s (`auth-reset.spec.ts:27`). PDF: **Escrever nota** não ficou disponível até o timeout de 120 s em `saveNote`, chamado por `pdf-study.spec.ts:149`. As causas permanecem não confirmadas; T103–T104 registram reprodução e investigação.
+- Capturas e traces preservados no artifact `browser-failure-evidence`. O teste PDF falhou antes do trecho que verifica aulas por etapas; essa rodada não comprova o progresso do tutor.
+- Build foi omitido porque E2E falhou. Não houve merge ou publicação em produção. O PR #3 continua aberto; os checks obrigatórios não foram contornados.

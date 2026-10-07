@@ -250,3 +250,12 @@ Entregar primeiro Setup + Foundation + US1; validar V01–V02. Acrescentar mater
 - [ ] T102 Substituir o layout de notas de prosa e textos de ligação por sublinhados de linhas verificadas e diagramas gráficos conforme `layout`, com rótulos/arestas e revelação por etapa, preservando limites, exportação e documentos antigos; verificar fonte visual sem linha inventada, geometria, todas as etapas e desenhos em `apps/api/src/modules/pdf-study/tutor-layout.ts`, `apps/api/test/pdf-study-tutor.spec.ts`, `apps/api/test/pdf-study/export.spec.ts` e `docs/pdf-study.md` per spec: EXT-004/UX-005/UX-006 (partial).
 
 **Dependencies**: T101 antes do aceite E2E das aulas; T102 usa os IDs de etapas persistidas em T101. Não concluir essas tarefas apenas por o schema/provider ou componentes React existirem. Novos ensaios reais requerem orçamento disponível e não são parte da reconciliação documental.
+
+## Phase 18: Convergence
+
+**Assessment**: Resultado remoto do commit d1c502b em 07/10/2026, workflow 37616075392. Formatação, lint, tipos, unidades, integração, contratos e instrumentos aprovados; navegador com 12 sucessos e duas falhas. Build não executado após falha do E2E. PR #3 permanece aberto sem merge.
+
+- [ ] T103 Diagnosticar e corrigir o fluxo de recuperação de senha no ambiente CI: depois de **Enviar instruções**, a confirmação esperada não apareceu em 15 s; inspecionar erro HTTP, e-mail sintético, SMTP e estado/hidratação antes de alterar o teste, preservando a mensagem neutra contra enumeração de contas. Reproduzir `tests/e2e/auth-reset.spec.ts:27` e verificar envio do link e login com nova senha per FR-001/T009/T045/Constitution IV (partial).
+- [ ] T104 Diagnosticar e corrigir o fluxo de notas do editor PDF após edição/recuperação: o botão **Escrever nota** não ficou disponível antes do timeout de 120 s em `saveNote` chamado por `tests/e2e/pdf-study.spec.ts:149`; inspecionar foco, diálogo, página ativa e estado de salvamento, conservar o rascunho e completar anotação/recarga/exportação sem enfraquecer as asserções per spec: EXT-003/FR-018/UX-005 (partial).
+
+**Evidence**: Capturas/trace preservados pelo artifact browser-failure-evidence do workflow. T103–T104 registram sintomas reproduzidos; a causa ainda não foi confirmada. Após as correções, executar novamente os gates completos antes do merge em dev.

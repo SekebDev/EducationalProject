@@ -43,8 +43,10 @@ Inventário: 21 requisitos funcionais, nove critérios de sucesso e cinco histó
 | T096 | chat registra modelo configurado e prompt; accounting de ensaio não é envelope persistido de toda geração | modelo retornado, hash/schema/request/tokens/latência por operação |
 | T101 | schemas/hooks de aula existem; controller não oferece advance e layout não salva lessons | persistência e avanço de etapas, histórico completo e retomada |
 | T102 | layout atual escreve explicações/rótulos em notas e ligações em texto/setas | desenho gráfico por etapa, sem notas de prosa do tutor |
+| T103 | E2E remoto não encontra confirmação após solicitar recuperação de senha | diagnosticar o fluxo completo mantendo a proteção contra enumeração |
+| T104 | E2E remoto espera Escrever nota e termina por timeout após edição/recuperação | diagnosticar disponibilidade do editor e preservar rascunhos |
 
-As lacunas anteriores não geraram tarefas duplicadas. Foram acrescentadas duas tarefas HIGH/partial, T101–T102, e quatro registros de trabalho implementado, T097–T100. Nenhuma pendência de aceite externo foi marcada como concluída. Não foi detectada lacuna nova específica dos métodos educacionais da feature 002; isso não encerra as lacunas herdadas da plataforma ou o PDF.
+As lacunas anteriores não geraram tarefas duplicadas. Foram acrescentadas quatro tarefas HIGH/partial: T101–T102 na inspeção do PDF e T103–T104 após os testes remotos. Também foram acrescentados quatro registros de trabalho implementado, T097–T100. Nenhuma pendência de aceite externo foi marcada como concluída. Não foi detectada lacuna nova específica dos métodos educacionais da feature 002; isso não encerra as lacunas herdadas da plataforma ou o PDF.
 
 ## Compatibilidade e integração
 
@@ -53,3 +55,5 @@ Migration 009 usa defaults aditivos para conversas/mensagens. Migrações 010/01
 O provider atual retorna etapas; o layout compatível preserva todas as explicações e diagramas como páginas/anotações do formato existente. Essa ponte permite o fluxo atual sem alegar que **Entendi**, aulas salvas ou diagramas por etapa estão completos. O PR #3 integra em dev; promoção para main/produção permanece sujeita ao aceite documentado.
 
 As verificações desta revisão e o resultado do CI estão em [validation.md](validation.md). Relatórios de 29/09–01/10 continuam evidência histórica com seus modelos, ambientes e limitações originais.
+
+O [workflow remoto 37616075392](https://github.com/SekebDev/EducationalProject/actions/runs/37616075392), no commit d1c502b, confirmou os checks até E2E: 12 cenários passaram e dois falharam. As falhas estão em T103–T104; build foi omitido por falha anterior. O [PR #3](https://github.com/SekebDev/EducationalProject/pull/3) permanece aberto. A autorização para merge foi recebida, mas a constituição exige checks aprovados; não foi usado bypass.
